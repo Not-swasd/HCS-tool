@@ -51,16 +51,16 @@ app.listen(6975, () => console.info("[Server] Listening on port 6975"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.all("*", (req, res, next) => {
-    req.ip = req.socket.remoteAddress.replace(/[^0-9.]/g, "");
+    req.ipAddress = req.ip.replace(/[^0-9.]/g, "");
     var now = new Date();
     var time = `[${now.getDate()}/${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][now.getMonth()]}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}]`;
-    console.log(req.socket.remoteAddress.replace(/[^0-9.]/g, ""), "- - " + time, '"' + req.method, req.path + '"');
+    console.log(req.ipAddress, "- - " + time, '"' + req.method, req.path + '"');
     next();
 });
 let using = [];
 app.post("/getSchool", async (req, res) => {
     try {
-        if(!config.allowedIps.includes(req.ip)) throw new Error(`403|해당 IP(${req.ip})는 접근 가능한 아이피가 아닙니다.`);
+        if(!config.allowedIps.includes(req.ipAddress)) throw new Error(`403|해당 IP(${req.ipAddress})는 접근 가능한 아이피가 아닙니다.`);
         // if(using.includes(ip)) return res.status(400).json({
         //     success: false,
         //     message: "해당 IP의 요청이 이미 있습니다."
@@ -78,9 +78,9 @@ app.post("/getSchool", async (req, res) => {
         } else {
             list = Object.values(list).reduce((a, b) => a.concat(b));
         };
-        using.push(req.ip);
+        using.push(req.ipAddress);
         let school = await findSchool(list, name, birthday);
-        using.remove(req.ip);
+        using.remove(req.ipAddress);
         if (!school) throw new Error("정보를 다시 확인해 주세요.");
         res.json({
             success: true,
@@ -88,7 +88,7 @@ app.post("/getSchool", async (req, res) => {
             data: school,
         });
     } catch (e) {
-        using.remove(req.ip);
+        using.remove(req.ipAddress);
         res.status(parseInt(e.message.split("|")[0]) || 500).json({
             success: false,
             message: e.message.split("|")[1] || e.message
