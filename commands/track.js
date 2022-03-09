@@ -68,24 +68,6 @@ module.exports = {
 	},
 };
 
-function getOrgCode(name, level, region = null) {
-	return new Promise(async resolve => {
-		try {
-			if (!region) {
-				["01", "02", "03", "04", "05", "06", "07", "08", "10", "11", "12", "13", "14", "15", "16", "17", "18"].forEach(async (region) => {
-					let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
-					if (result && result[0]) resolve(result[0].orgCode);
-				});
-			} else {
-				let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
-				if (result && result[0]) resolve(result[0].orgCode);
-			};
-		} catch (e) {
-			resolve(false);
-		};
-	});
-};
-
 /*
 const schools = JSON.parse(fs.readFileSync("./전국학교학구도연계정보표준데이터.json", "utf8")).records;
 let s = {

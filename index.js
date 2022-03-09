@@ -47,7 +47,7 @@ global.r = {
 	"gne": "경상남도",
 	"jje": "제주특별자치도"
 };
-app.listen(6975);
+app.listen(6975, () => console.info("[Server] Listening on port 6975"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.post("/getSchool", async (req, res) => {
@@ -79,6 +79,24 @@ app.post("/getSchool", async (req, res) => {
         });
     };
 });
+
+function getOrgCode(name, level, region = null) {
+	return new Promise(async resolve => {
+		try {
+			if (!region) {
+				["01", "02", "03", "04", "05", "06", "07", "08", "10", "11", "12", "13", "14", "15", "16", "17", "18"].forEach(async (region) => {
+					let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
+					if (result && result[0]) resolve(result[0].orgCode);
+				});
+			} else {
+				let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
+				if (result && result[0]) resolve(result[0].orgCode);
+			};
+		} catch (e) {
+			resolve(false);
+		};
+	});
+};
 
 global.findSchool = function findSchool(orgList, name, birthday) {
 	return new Promise(async resolve => {
