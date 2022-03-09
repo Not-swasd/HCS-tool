@@ -29,23 +29,23 @@ const app = express();
 global.schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
 global.using = [];
 global.r = {
-	"sen": "서울특별시",
-	"pen": "부산광역시",
-	"dge": "대구광역시",
-	"ice": "인천광역시",
-	"gen": "광주광역시",
-	"dje": "대전광역시",
-	"use": "울산광역시",
-	"sje": "세종특별자치시",
-	"goe": "경기도",
-	"gwe": "강원도",
-	"cbe": "충청북도",
-	"cne": "충청남도",
-	"jbe": "전라북도",
-	"jne": "전라남도",
-	"gbe": "경상북도",
-	"gne": "경상남도",
-	"jje": "제주특별자치도"
+    "sen": "서울특별시",
+    "pen": "부산광역시",
+    "dge": "대구광역시",
+    "ice": "인천광역시",
+    "gen": "광주광역시",
+    "dje": "대전광역시",
+    "use": "울산광역시",
+    "sje": "세종특별자치시",
+    "goe": "경기도",
+    "gwe": "강원도",
+    "cbe": "충청북도",
+    "cne": "충청남도",
+    "jbe": "전라북도",
+    "jne": "전라남도",
+    "gbe": "경상북도",
+    "gne": "경상남도",
+    "jje": "제주특별자치도"
 };
 app.listen(6975, () => console.info("[Server] Listening on port 6975"));
 app.use(express.json());
@@ -81,83 +81,83 @@ app.post("/getSchool", async (req, res) => {
 });
 
 function getOrgCode(name, level, region = null) {
-	return new Promise(async resolve => {
-		try {
-			if (!region) {
-				["01", "02", "03", "04", "05", "06", "07", "08", "10", "11", "12", "13", "14", "15", "16", "17", "18"].forEach(async (region) => {
-					let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
-					if (result && result[0]) resolve(result[0].orgCode);
-				});
-			} else {
-				let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
-				if (result && result[0]) resolve(result[0].orgCode);
-			};
-		} catch (e) {
-			resolve(false);
-		};
-	});
+    return new Promise(async resolve => {
+        try {
+            if (!region) {
+                ["01", "02", "03", "04", "05", "06", "07", "08", "10", "11", "12", "13", "14", "15", "16", "17", "18"].forEach(async (region) => {
+                    let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
+                    if (result && result[0]) resolve(result[0].orgCode);
+                });
+            } else {
+                let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
+                if (result && result[0]) resolve(result[0].orgCode);
+            };
+        } catch (e) {
+            resolve(false);
+        };
+    });
 };
 
 global.findSchool = function findSchool(orgList, name, birthday) {
-	return new Promise(async resolve => {
-		try {
-			let found = false;
-			orgList = orgList.reduce((all, one, i) => {
-				const ch = Math.floor(i / 100);
-				all[ch] = [].concat((all[ch] || []), one);
-				return all
-			}, []); //chunking
-			for (chunk of orgList) await Promise.all(chunk.map(async (orgCode) => {
-				// let orgCode = await getOrgCode(school["학교명"], schoolLevel, regionCodes[region]);
-				// if (!orgCode) return;
-				if (found) return;
-				let postData = {
-					"orgCode": orgCode.split("|")[0],
-					"name": encrypt.encrypt(name),
-					"birthday": encrypt.encrypt(birthday.join("")),
-					"stdntPNo": null,
-					"loginType": "school"
-				};
-				let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
-					headers: {
-						"Accept": "application/json, text/plain, */*",
-						"Accept-Encoding": "gzip, deflate, br",
-						"Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
-						"Cache-Control": "no-cache",
-						"Connection": "keep-alive",
-						"Content-Type": "application/json;charset=UTF-8",
-						"Host": `${orgCode.split("|")[1]}hcs.eduro.go.kr`,
-						"Origin": "https://hcs.eduro.go.kr",
-						"Pragma": "no-cache",
-						"Referer": "https://hcs.eduro.go.kr/",
-						"sec-ch-ua": `" Not A;Brand";v="99", "Chromium";v="98", "Whale";v="3"`,
-						"sec-ch-ua-mobile": "?0",
-						"sec-ch-ua-platform": `"Windows"`,
-						"Sec-Fetch-Dest": "empty",
-						"Sec-Fetch-Mode": "cors",
-						"Sec-Fetch-Site": "same-site",
-						"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
-						"X-Requested-With": "XMLHttpRequest",
-					}
-				}).catch(err => err.response);
-				result = !result ? null : result.data;
+    return new Promise(async resolve => {
+        try {
+            let found = false;
+            orgList = orgList.reduce((all, one, i) => {
+                const ch = Math.floor(i / 100);
+                all[ch] = [].concat((all[ch] || []), one);
+                return all
+            }, []); //chunking
+            for (chunk of orgList) await Promise.all(chunk.map(async (orgCode) => {
+                // let orgCode = await getOrgCode(school["학교명"], schoolLevel, regionCodes[region]);
+                // if (!orgCode) return;
+                if (found) return;
+                let postData = {
+                    "orgCode": orgCode.split("|")[0],
+                    "name": encrypt.encrypt(name),
+                    "birthday": encrypt.encrypt(birthday.join("")),
+                    "stdntPNo": null,
+                    "loginType": "school"
+                };
+                let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
+                    headers: {
+                        "Accept": "application/json, text/plain, */*",
+                        "Accept-Encoding": "gzip, deflate, br",
+                        "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "Content-Type": "application/json;charset=UTF-8",
+                        "Host": `${orgCode.split("|")[1]}hcs.eduro.go.kr`,
+                        "Origin": "https://hcs.eduro.go.kr",
+                        "Pragma": "no-cache",
+                        "Referer": "https://hcs.eduro.go.kr/",
+                        "sec-ch-ua": `" Not A;Brand";v="99", "Chromium";v="98", "Whale";v="3"`,
+                        "sec-ch-ua-mobile": "?0",
+                        "sec-ch-ua-platform": `"Windows"`,
+                        "Sec-Fetch-Dest": "empty",
+                        "Sec-Fetch-Mode": "cors",
+                        "Sec-Fetch-Site": "same-site",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
+                        "X-Requested-With": "XMLHttpRequest",
+                    }
+                }).catch(err => err.response);
+                result = !result ? null : result.data;
                 if (result) {
-					result.orgCode = orgCode.split("|")[0];
-					result.scCode = orgCode.split("|")[1];
+                    result.orgCode = orgCode.split("|")[0];
+                    result.scCode = orgCode.split("|")[1];
                     result.region = r[orgCode.split("|")[1]];
                     result.token = "privacy";
-				};
-				if (!!result && !!result.orgName && !result.isError) {
-					found = true;
-					resolve(result);
-				};
-			}));
-			resolve(null);
-		} catch (e) {
+                };
+                if (!!result && !!result.orgName && !result.isError) {
+                    found = true;
+                    resolve(result);
+                };
+            }));
+            resolve(null);
+        } catch (e) {
             console.log(e)
             resolve(null);
-		};
-	});
+        };
+    });
 };
 
 global.config = require('./config.json');
