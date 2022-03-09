@@ -50,14 +50,20 @@ global.r = {
 app.listen(6975, () => console.info("[Server] Listening on port 6975"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+let using = [];
 app.post("/getSchool", async (req, res) => {
+    let ip = req.socket.remoteAddress.replace(/[^0-9.]/g, "");
     try {
+        if(using.includes(ip)) return res.status(400).json({
+            success: false,
+            message: "해당 IP의 요청이 이미 있습니다."
+        });
         let { name, birthday, region, special } = req.body;
-        if (!name || name.length !== 3 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name)) throw new Error("이름을 다시 확인해 주세요.");
-        if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
+        if (!name || name.length !== 3 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name)) throw new Error("400|이름을 다시 확인해 주세요.");
+        if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("400|생년월일을 다시 확인해 주세요.");
         if (typeof special != "boolean") throw new Error("특수학교 여부를 다시 확인해 주세요.");
         birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
-        if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
+        if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("400|생년월일을 다시 확인해 주세요.");
         let schoolLevel = Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중학교" : "고등학교";
         let list = schools[special ? "기타" : schoolLevel];
         if (!!region) {
@@ -65,7 +71,9 @@ app.post("/getSchool", async (req, res) => {
         } else {
             list = Object.values(list).reduce((a, b) => a.concat(b));
         };
+        using.push(ip);
         let school = await findSchool(list, name, birthday);
+        using.remove(ip);
         if (!school) throw new Error("정보를 다시 확인해 주세요.");
         res.json({
             success: true,
@@ -73,9 +81,10 @@ app.post("/getSchool", async (req, res) => {
             data: school,
         });
     } catch (e) {
-        res.status(500).json({
+        using.remove(ip);
+        res.status(parseInt(e.message.split("|")[0]) || 500).json({
             success: false,
-            message: e.message
+            message: e.message.split("|")[1] || e.message
         });
     };
 });
@@ -162,7 +171,6 @@ global.findSchool = function findSchool(orgList, name, birthday) {
 
 global.config = require('./config.json');
 
-//Array prototype.remove
 Array.prototype.remove = function (element) {
     var index = this.indexOf(element);
     if (index > -1) this.splice(index, 1);
