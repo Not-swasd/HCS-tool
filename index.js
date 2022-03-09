@@ -50,11 +50,17 @@ global.r = {
 app.listen(6975, () => console.info("[Server] Listening on port 6975"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.all("*", (req, res, next) => {
+    var now = new Date();
+    var time = `[${now.getDate()}/${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][now.getMonth()]}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}]`;
+    console.log(req.socket.remoteAddress.replace(/[^0-9.]/g, ""), "- - " + time, '"' + req.method, req.path + '"');
+    next();
+});
 let using = [];
 app.post("/getSchool", async (req, res) => {
     let ip = req.socket.remoteAddress.replace(/[^0-9.]/g, "");
     try {
-        if(!config.allowedIps.includes(ip)) throw new Error("403|해당 IP는 접근 가능한 아이피가 아닙니다.");
+        if(!config.allowedIps.includes(ip)) throw new Error(`403|해당 IP(${ip})는 접근 가능한 아이피가 아닙니다.`);
         // if(using.includes(ip)) return res.status(400).json({
         //     success: false,
         //     message: "해당 IP의 요청이 이미 있습니다."
