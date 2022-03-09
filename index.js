@@ -54,7 +54,7 @@ let using = [];
 app.post("/getSchool", async (req, res) => {
     let ip = req.socket.remoteAddress.replace(/[^0-9.]/g, "");
     try {
-        if(!config.allowedIps.includes(ip)) throw new Error("400|해당 IP는 접근 가능한 아이피가 아닙니다.");
+        if(!config.allowedIps.includes(ip)) throw new Error("403|해당 IP는 접근 가능한 아이피가 아닙니다.");
         // if(using.includes(ip)) return res.status(400).json({
         //     success: false,
         //     message: "해당 IP의 요청이 이미 있습니다."
