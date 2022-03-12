@@ -169,7 +169,7 @@ global.findSchool = function findSchool(orgList, name, birthday, interaction = f
                     if (!!result && !!result.orgName && !result.isError) {
                         success.push(result);
                         if (!interaction) resolve([result]);
-                        else interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 성공 (아직 끝나지 않았습니다)").setDescription(description += `\n**\`${result.orgName}(${r[result.scCode]})\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`)] });
+                        else interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 성공 (아직 끝나지 않았습니다)").setDescription(description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`)] });
                     };
                 }));
             };
