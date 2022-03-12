@@ -36,7 +36,7 @@ module.exports = {
 	async execute(interaction, client) {
 		try {
 			if (using.includes(interaction.userId)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 기다리쇼").setColor("RED")] });
-			if (!config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED")] });
+			if (!config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED")], ephemeral: true });
 			let startedTime = Date.now();
 			let region = interaction.options.getString("지역");
 			let name = interaction.options.getString("이름");
@@ -44,7 +44,7 @@ module.exports = {
 			let special = interaction.options.getBoolean("특수학교여부");
 			if (!name || name.length !== 3 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 이름을 다시 확인해 주세요!").setColor("RED")], ephemeral: true });
 			if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 생년월일을 다시 확인해 주세요!").setColor("RED")], ephemeral: true });
-			await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (늦으면 약 1분정도 소요)").setColor("BLUE")], ephemeral: true });
+			await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (약 1분 소요)").setColor("BLUE")], ephemeral: true });
 			birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
 			if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) return interaction.editReply({ embeds: [new MessageEmbed().setTitle("❌ 생년월일을 다시 확인해 주세요!").setColor("RED")], ephemeral: true });
 			let schoolLevel = Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중학교" : "고등학교";
@@ -55,11 +55,11 @@ module.exports = {
 				list = Object.values(list).reduce((a, b) => a.concat(b));
 			};
 			using.push(interaction.user.id);
-			let school = await findSchool(list, name, birthday);
+			let school = await findSchool(list, name, birthday, interaction);
 			using.remove(interaction.user.id);
-			if (!school) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요! (소요된 시간: ${((Date.now() - startedTime) / 1000) + 1}초)`).setColor("RED")], ephemeral: true });
+			if (school.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요! (소요된 시간: ${((Date.now() - startedTime) / 1000) + 1}초)`).setColor("RED")], ephemeral: true });
 			await interaction.editReply({
-				embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 성공").setDescription(`**\`${school.orgName}(${r[school.scCode]})\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${((Date.now() - startedTime) / 1000) + 1}초)`)]
+				embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}\`**님의 정보를 ${school.length}개 찾았습니다:\n${school.map(x => `\n**\`${x.orgName}(${r[x.scCode]})\`**`)}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)]
 			});
 		} catch (e) {
 			using.remove(interaction.user.id);

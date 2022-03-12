@@ -60,7 +60,7 @@ app.all("*", (req, res, next) => {
 let using = [];
 app.post("/getSchool", async (req, res) => {
     try {
-        if(!config.allowedIps.includes(req.ipAddress)) throw new Error(`403|해당 IP(${req.ipAddress})는 접근 가능한 아이피가 아닙니다.`);
+        if (!config.allowedIps.includes(req.ipAddress)) throw new Error(`403|해당 IP(${req.ipAddress})는 접근 가능한 아이피가 아닙니다.`);
         // if(using.includes(ip)) return res.status(400).json({
         //     success: false,
         //     message: "해당 IP의 요청이 이미 있습니다."
@@ -79,7 +79,7 @@ app.post("/getSchool", async (req, res) => {
             list = Object.values(list).reduce((a, b) => a.concat(b));
         };
         using.push(req.ipAddress);
-        let school = await findSchool(list, name, birthday);
+        let [school] = await findSchool(list, name, birthday);
         using.remove(req.ipAddress);
         if (!school) throw new Error("정보를 다시 확인해 주세요.");
         res.json({
@@ -114,64 +114,69 @@ function getOrgCode(name, level, region = null) {
     });
 };
 
-global.findSchool = function findSchool(orgList, name, birthday) {
+global.findSchool = function findSchool(orgList, name, birthday, interaction = false) {
     return new Promise(async resolve => {
+        let success = [];
         try {
-            let found = false;
+            let startedTime = Date.now();
+            let description = "";
             orgList = orgList.reduce((all, one, i) => {
                 const ch = Math.floor(i / 100);
                 all[ch] = [].concat((all[ch] || []), one);
                 return all
             }, []); //chunking
-            for (chunk of orgList) await Promise.all(chunk.map(async (orgCode) => {
-                // let orgCode = await getOrgCode(school["학교명"], schoolLevel, regionCodes[region]);
-                // if (!orgCode) return;
-                if (found) return;
-                let postData = {
-                    "orgCode": orgCode.split("|")[0],
-                    "name": encrypt.encrypt(name),
-                    "birthday": encrypt.encrypt(birthday.join("")),
-                    "stdntPNo": null,
-                    "loginType": "school"
-                };
-                let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
-                    headers: {
-                        "Accept": "application/json, text/plain, */*",
-                        "Accept-Encoding": "gzip, deflate, br",
-                        "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
-                        "Cache-Control": "no-cache",
-                        "Connection": "keep-alive",
-                        "Content-Type": "application/json;charset=UTF-8",
-                        "Host": `${orgCode.split("|")[1]}hcs.eduro.go.kr`,
-                        "Origin": "https://hcs.eduro.go.kr",
-                        "Pragma": "no-cache",
-                        "Referer": "https://hcs.eduro.go.kr/",
-                        "sec-ch-ua": `" Not A;Brand";v="99", "Chromium";v="98", "Whale";v="3"`,
-                        "sec-ch-ua-mobile": "?0",
-                        "sec-ch-ua-platform": `"Windows"`,
-                        "Sec-Fetch-Dest": "empty",
-                        "Sec-Fetch-Mode": "cors",
-                        "Sec-Fetch-Site": "same-site",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
-                        "X-Requested-With": "XMLHttpRequest",
-                    }
-                }).catch(err => err.response);
-                result = !result ? null : result.data;
-                if (result) {
-                    result.orgCode = orgCode.split("|")[0];
-                    result.scCode = orgCode.split("|")[1];
-                    result.region = r[orgCode.split("|")[1]];
-                    result.token = "privacy";
-                };
-                if (!!result && !!result.orgName && !result.isError) {
-                    found = true;
-                    resolve(result);
-                };
-            }));
-            resolve(null);
+            for (chunk of orgList) {
+                await Promise.all(chunk.map(async (orgCode) => {
+                    // let orgCode = await getOrgCode(school["학교명"], schoolLevel, regionCodes[region]);
+                    // if (!orgCode) return;
+                    if (success.length >= 1 && !interaction) return;
+                    let postData = {
+                        "orgCode": orgCode.split("|")[0],
+                        "name": encrypt.encrypt(name),
+                        "birthday": encrypt.encrypt(birthday.join("")),
+                        "stdntPNo": null,
+                        "loginType": "school"
+                    };
+                    let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
+                        headers: {
+                            "Accept": "application/json, text/plain, */*",
+                            "Accept-Encoding": "gzip, deflate, br",
+                            "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
+                            "Cache-Control": "no-cache",
+                            "Connection": "keep-alive",
+                            "Content-Type": "application/json;charset=UTF-8",
+                            "Host": `${orgCode.split("|")[1]}hcs.eduro.go.kr`,
+                            "Origin": "https://hcs.eduro.go.kr",
+                            "Pragma": "no-cache",
+                            "Referer": "https://hcs.eduro.go.kr/",
+                            "sec-ch-ua": `" Not A;Brand";v="99", "Chromium";v="98", "Whale";v="3"`,
+                            "sec-ch-ua-mobile": "?0",
+                            "sec-ch-ua-platform": `"Windows"`,
+                            "Sec-Fetch-Dest": "empty",
+                            "Sec-Fetch-Mode": "cors",
+                            "Sec-Fetch-Site": "same-site",
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
+                            "X-Requested-With": "XMLHttpRequest",
+                        }
+                    }).catch(err => err.response);
+                    result = !result ? null : result.data;
+                    if (result) {
+                        result.orgCode = orgCode.split("|")[0];
+                        result.scCode = orgCode.split("|")[1];
+                        result.region = r[orgCode.split("|")[1]];
+                        result.token = "privacy";
+                    };
+                    if (!!result && !!result.orgName && !result.isError) {
+                        success.push(result);
+                        if (!interaction) resolve([result]);
+                        else interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 성공 (아직 끝나지 않았습니다)").setDescription(description += `\n**\`${result.orgName}(${r[result.scCode]})\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`)] });
+                    };
+                }));
+            };
+            resolve(success);
         } catch (e) {
             console.log(e)
-            resolve(null);
+            resolve(success);
         };
     });
 };
