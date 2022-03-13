@@ -1,0 +1,18 @@
+{
+    "token": "디스코드 봇 토큰",
+    "owners": [
+        "봇 소유자 디코 아이디"
+    ],
+    "allowedUsers": [
+        "봇을 사용할 수 있는 사람 디코 아이디"
+    ],
+    "allowedIps": [
+        "api 서버 사용할 수 있는 사람 아이피",
+    ],
+    "proxy": {
+        "auth": "",
+        "host": "프록시",
+        "protocol": "http",
+        "port": 없으면빈칸
+    }
+}

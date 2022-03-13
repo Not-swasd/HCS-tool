@@ -14,8 +14,8 @@
     ],
     "proxy": {
         "auth": "",
-        "host": "115.178.78.58",
+        "host": "1",
         "protocol": "http",
-        "port": 3128
+        "port": 1
     }
 }
