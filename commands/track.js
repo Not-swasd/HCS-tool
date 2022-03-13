@@ -43,7 +43,7 @@ module.exports = {
 			let special = interaction.options.getBoolean("특수학교여부");
 			if (!name || name.length !== 3 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 이름을 다시 확인해 주세요!").setColor("RED")], ephemeral: true });
 			if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 생년월일을 다시 확인해 주세요!").setColor("RED")], ephemeral: true });
-			await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (최대 약 1분 소요)").setColor("BLUE")], ephemeral: true });
+			await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (약 1분 소요)").setColor("BLUE")], ephemeral: true });
 			birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
 			if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) return interaction.editReply({ embeds: [new MessageEmbed().setTitle("❌ 생년월일을 다시 확인해 주세요!").setColor("RED")], ephemeral: true });
 			let schoolLevel = Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중학교" : "고등학교";
