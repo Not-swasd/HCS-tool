@@ -101,11 +101,11 @@ function getOrgCode(name, level, region = null) {
         try {
             if (!region) {
                 ["01", "02", "03", "04", "05", "06", "07", "08", "10", "11", "12", "13", "14", "15", "16", "17", "18"].forEach(async (region) => {
-                    let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
+                    let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`, { proxy }).then(res => res.data.schulList).catch(() => false);
                     if (result && result[0]) resolve(result[0].orgCode);
                 });
             } else {
-                let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`).then(res => res.data.schulList).catch(() => false);
+                let result = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`, { proxy }).then(res => res.data.schulList).catch(() => false);
                 if (result && result[0]) resolve(result[0].orgCode);
             };
         } catch (e) {
@@ -138,6 +138,7 @@ global.findSchool = function findSchool(orgList, name, birthday, interaction = f
                         "loginType": "school"
                     };
                     let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
+                        proxy,
                         headers: {
                             "Accept": "application/json, text/plain, */*",
                             "Accept-Encoding": "gzip, deflate, br",
@@ -182,6 +183,7 @@ global.findSchool = function findSchool(orgList, name, birthday, interaction = f
 };
 
 global.config = require('./config.json');
+let proxy = config.proxy ? config.proxy : false;
 
 Array.prototype.remove = function (element) {
     var index = this.indexOf(element);
