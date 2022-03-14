@@ -58,7 +58,7 @@ module.exports = {
 			using.remove(interaction.user.id);
 			if (school.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요! (소요된 시간: ${((Date.now() - startedTime) / 1000) + 1}초)`).setColor("RED")], ephemeral: true });
 			await interaction.editReply({
-				embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}\`**님의 정보를 ${school.length}개 찾았습니다:\n${school.map(x => `\n**\`${x.orgName}(${r[x.scCode]})\`**`)}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)]
+				embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}\`**님의 정보를 ${school.length}개 찾았습니다:\n${school.map(x => `\n**\`${r[x.scCode]} ${x.orgName}\`**`)}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)]
 			});
 		} catch (e) {
 			using.remove(interaction.user.id);
