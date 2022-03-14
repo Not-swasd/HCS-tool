@@ -123,7 +123,7 @@ global.findSchool = function findSchool(orgList, name, birthday, interaction = f
             let startedTime = Date.now();
             let description = "";
             orgList = orgList.reduce((all, one, i) => {
-                const ch = Math.floor(i / 150);
+                const ch = Math.floor(i / 200);
                 all[ch] = [].concat((all[ch] || []), one);
                 return all
             }, []); //chunking
