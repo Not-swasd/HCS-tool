@@ -64,10 +64,10 @@ app.post("/getSchool", async (req, res) => {
     let startedTime = Date.now();
     try {
         if (!config.allowedIps.includes(req.ipAddress)) throw new Error(`403|해당 IP(${req.ipAddress})는 접근 가능한 아이피가 아닙니다.`);
-        // if(using.includes(ip)) return res.status(400).json({
-        //     success: false,
-        //     message: "해당 IP의 요청이 이미 있습니다."
-        // }); //임시제거
+        if(using.includes(ip)) return res.status(400).json({
+            success: false,
+            message: "해당 IP의 요청이 이미 진행중입니다."
+        });
         let { name, birthday, region, special } = req.body;
         if (!name || name.length !== 3 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name)) throw new Error("400|이름을 다시 확인해 주세요.");
         if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("400|생년월일을 다시 확인해 주세요.");
