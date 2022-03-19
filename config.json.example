@@ -9,6 +9,9 @@
     "allowedIps": [
         "api 서버 사용할 수 있는 사람 아이피",
     ],
+    "blockedNames": [
+        "사용할 수 없는 이름"
+    ],
     "proxy": {
         "auth": "",
         "host": "프록시",
