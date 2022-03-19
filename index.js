@@ -61,6 +61,7 @@ app.all("*", (req, res, next) => {
 });
 let using = [];
 app.post("/getSchool", async (req, res) => {
+    let startedTime = Date.now();
     try {
         if (!config.allowedIps.includes(req.ipAddress)) throw new Error(`403|해당 IP(${req.ipAddress})는 접근 가능한 아이피가 아닙니다.`);
         // if(using.includes(ip)) return res.status(400).json({
@@ -81,19 +82,21 @@ app.post("/getSchool", async (req, res) => {
             list = Object.values(list).reduce((a, b) => a.concat(b));
         };
         using.push(req.ipAddress);
-        let [school] = await findSchool(list, name, birthday);
+        let schools = await findSchool(list, name, birthday);
         using.remove(req.ipAddress);
-        if (!school) throw new Error("정보를 다시 확인해 주세요.");
+        if (!schools.length > 1) throw new Error("정보를 다시 확인해 주세요.");
         res.json({
             success: true,
             messsage: "success",
-            data: school,
+            data: schools,
+            t: Date.now() - startedTime
         });
     } catch (e) {
         using.remove(req.ipAddress);
         res.status(parseInt(e.message.split("|")[0]) || 500).json({
             success: false,
-            message: e.message.split("|")[1] || e.message
+            message: e.message.split("|")[1] || e.message,
+            t: Date.now() - startedTime
         });
     };
 });
@@ -131,7 +134,6 @@ global.findSchool = function findSchool(orgList, name, birthday, interaction = f
                 await Promise.all(chunk.map(async (orgCode) => {
                     // let orgCode = await getOrgCode(school["학교명"], schoolLevel, regionCodes[region]);
                     // if (!orgCode) return;
-                    if (success.length >= 1 && !interaction) return;
                     let postData = {
                         "orgCode": orgCode.split("|")[0],
                         "name": encrypt.encrypt(name),
@@ -171,8 +173,7 @@ global.findSchool = function findSchool(orgList, name, birthday, interaction = f
                     };
                     if (!!result && !!result.orgName && !result.isError) {
                         success.push(result);
-                        if (!interaction) resolve([result]);
-                        else interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 성공 (아직 끝나지 않았습니다)").setDescription(description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`)] });
+                        if (interaction) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 성공 (아직 끝나지 않았습니다)").setDescription(description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`)] });
                     };
                 }));
             };
