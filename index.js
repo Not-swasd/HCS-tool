@@ -183,7 +183,7 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                     };
                     if (!!result && !!result.orgName && !result.isError) {
                         s.push(result);
-                        description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`;
+                        interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`)] });
                     };
                 }));
             };
