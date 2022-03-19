@@ -1,4 +1,4 @@
-const { Client, Intents, Collection, MessageEmbed } = require("discord.js");
+const { Client, Intents, Collection, MessageEmbed, CommandInteraction } = require("discord.js");
 const client = new Client({
     "fetchAllMembers": true,
     "partials": ["CHANNEL", "GUILD_MEMBER", "MESSAGE", "REACTION", "USER"],
@@ -64,31 +64,32 @@ app.post("/getSchool", async (req, res) => {
     let startedTime = Date.now();
     try {
         if (!config.allowedIps.includes(req.ipAddress)) throw new Error(`403|해당 IP(${req.ipAddress})는 접근 가능한 아이피가 아닙니다.`);
-        if(using.includes(ip)) return res.status(400).json({
+        if(using.includes(res.ipAddress)) return res.status(400).json({
             success: false,
             message: "해당 IP의 요청이 이미 진행중입니다."
         });
         let { name, birthday, region, special } = req.body;
-        if (!name || name.length !== 3 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name)) throw new Error("400|이름을 다시 확인해 주세요.");
-        if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("400|생년월일을 다시 확인해 주세요.");
-        if (typeof special != "boolean") throw new Error("특수학교 여부를 다시 확인해 주세요.");
-        birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
-        if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("400|생년월일을 다시 확인해 주세요.");
-        let schoolLevel = Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중학교" : "고등학교";
-        let list = schools[special ? "기타" : schoolLevel];
-        if (!!region) {
-            list = list[region];
-        } else {
-            list = Object.values(list).reduce((a, b) => a.concat(b));
-        };
+        // if (!name || name.length !== 3 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name)) throw new Error("400|이름을 다시 확인해 주세요.");
+        // if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("400|생년월일을 다시 확인해 주세요.");
+        // if (typeof special != "boolean") throw new Error("특수학교 여부를 다시 확인해 주세요.");
+        // birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
+        // if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("400|생년월일을 다시 확인해 주세요.");
+        // let schoolLevel = Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중학교" : "고등학교";
+        // let list = schools[special ? "기타" : schoolLevel];
+        // if (!!region) {
+        //     list = list[region];
+        // } else {
+        //     list = Object.values(list).reduce((a, b) => a.concat(b));
+        // };
         using.push(req.ipAddress);
-        let schools = await findSchool(list, name, birthday);
+        let result = await findSchool(name, birthday, region, special);
         using.remove(req.ipAddress);
-        if (!schools.length > 1) throw new Error("정보를 다시 확인해 주세요.");
+        if(!result.success) throw new Error(`400|${school.message}`);
+        if (!result.schools.length > 1) throw new Error("400|정보를 다시 확인해 주세요.");
         res.json({
             success: true,
             messsage: "success",
-            data: schools,
+            data: result.schools,
             t: Date.now() - startedTime
         });
     } catch (e) {
@@ -119,18 +120,42 @@ function getOrgCode(name, level, region = null) {
     });
 };
 
-global.findSchool = function findSchool(orgList, name, birthday, interaction = false) {
+global.findSchool = findSchool;
+/**
+ * 
+ * @param {array} orgList 
+ * @param {string} name 
+ * @param {string} birthday 
+ * @param {string} region 
+ * @param {boolean} special 
+ * @param {CommandInteraction} interaction 
+ * @returns {Promise<{ success: boolean, message: string, schools: array }>}
+ */
+function findSchool(name, birthday, region, special = false, interaction = null) {
     return new Promise(async resolve => {
-        let success = [];
+        let s = [];
+        let startedTime = Date.now();
         try {
-            let startedTime = Date.now();
+            if ((!name || name.length < 2 || name.length > 4 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요.");
+			if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
+			birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
+			if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
+            let schoolLevel = Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중학교" : "고등학교";
+			let orgList = schools[special ? "기타" : schoolLevel];
+            orgList = !!region ? orgList[region] : Object.values(orgList).reduce((a, b) => a.concat(b));
             let description = "";
             orgList = orgList.reduce((all, one, i) => {
                 const ch = Math.floor(i / 200);
                 all[ch] = [].concat((all[ch] || []), one);
                 return all
             }, []); //chunking
+            let currentPage = 0;
             for (chunk of orgList) {
+                currentPage++;
+                if(interaction) {
+                    if(s.length >= 1) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description)] });
+                    else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${orgList.length})`)] });
+                };
                 await Promise.all(chunk.map(async (orgCode) => {
                     // let orgCode = await getOrgCode(school["학교명"], schoolLevel, regionCodes[region]);
                     // if (!orgCode) return;
@@ -172,15 +197,22 @@ global.findSchool = function findSchool(orgList, name, birthday, interaction = f
                         result.token = "privacy";
                     };
                     if (!!result && !!result.orgName && !result.isError) {
-                        success.push(result);
-                        if (interaction) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 성공 (아직 끝나지 않았습니다)").setDescription(description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`)] });
+                        s.push(result);
+                        description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초)`;
                     };
                 }));
             };
-            resolve(success);
+            resolve({
+                success: true,
+                message: `해당 정보로 총 ${s.length}개의 학교를 찾았습니다.`,
+                schools: s
+            });
         } catch (e) {
-            console.log(e)
-            resolve(success);
+            resolve({
+                success: false,
+                message: e.message,
+                schools: s
+            });
         };
     });
 };
