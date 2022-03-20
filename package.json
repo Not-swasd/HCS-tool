@@ -17,6 +17,6 @@
     "express": "^4.17.3",
     "fs": "^0.0.1-security",
     "jsencrypt": "^3.2.1",
-    "node-fetch": "^3.2.3"
+    "node-fetch": "^2.6.7"
   }
 }
