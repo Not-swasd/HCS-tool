@@ -20,6 +20,7 @@ const client = new Client({
     ]
 });
 const { default: axios } = require("axios-https-proxy-fix");
+const fetch = require("node-fetch").default;
 global.config = require('./config.json');
 let proxy = !!config.proxy.host ? config.proxy : false;
 const JSEncrypt = require('JSEncrypt');
@@ -142,36 +143,37 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                     else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${orgList.length})`)] });
                 };
                 await Promise.all(chunk.map(async (orgCode) => {
-                    let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, {
+                    let postData = {
                         "orgCode": orgCode.split("|")[0],
                         "name": encrypt.encrypt(name),
                         "birthday": encrypt.encrypt(birthday.join("")),
                         "stdntPNo": null,
                         "loginType": "school"
-                    }, {
-                        proxy,
-                        headers: {
-                            "Accept": "application/json, text/plain, */*",
-                            "Accept-Encoding": "gzip, deflate, br",
-                            "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
-                            "Cache-Control": "no-cache",
-                            "Connection": "keep-alive",
-                            "Content-Type": "application/json;charset=UTF-8",
-                            "Host": `${orgCode.split("|")[1]}hcs.eduro.go.kr`,
-                            "Origin": "https://hcs.eduro.go.kr",
-                            "Pragma": "no-cache",
-                            "Referer": "https://hcs.eduro.go.kr/",
-                            "sec-ch-ua": `" Not A;Brand";v="99", "Chromium";v="98", "Whale";v="3"`,
-                            "sec-ch-ua-mobile": "?0",
-                            "sec-ch-ua-platform": `"Windows"`,
-                            "Sec-Fetch-Dest": "empty",
-                            "Sec-Fetch-Mode": "cors",
-                            "Sec-Fetch-Site": "same-site",
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
-                            "X-Requested-With": "XMLHttpRequest",
-                        }
-                    }).catch(err => err.response);
-                    result = !result ? null : result.data;
+                    };
+                    // let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
+                    //     proxy,
+                    //     headers: {
+                    //         "Accept": "application/json, text/plain, */*",
+                    //         "Accept-Encoding": "gzip, deflate, br",
+                    //         "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
+                    //         "Cache-Control": "no-cache",
+                    //         "Connection": "keep-alive",
+                    //         "Content-Type": "application/json;charset=UTF-8",
+                    //         "Host": `${orgCode.split("|")[1]}hcs.eduro.go.kr`,
+                    //         "Origin": "https://hcs.eduro.go.kr",
+                    //         "Pragma": "no-cache",
+                    //         "Referer": "https://hcs.eduro.go.kr/",
+                    //         "sec-ch-ua": `" Not A;Brand";v="99", "Chromium";v="98", "Whale";v="3"`,
+                    //         "sec-ch-ua-mobile": "?0",
+                    //         "sec-ch-ua-platform": `"Windows"`,
+                    //         "Sec-Fetch-Dest": "empty",
+                    //         "Sec-Fetch-Mode": "cors",
+                    //         "Sec-Fetch-Site": "same-site",
+                    //         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
+                    //         "X-Requested-With": "XMLHttpRequest",
+                    //     }
+                    // }).catch(err => err.response);
+                    // result = !result ? null : result.data;
                     if (!!result && !!result.orgName && !result.isError) {
                         result.orgCode = orgCode.split("|")[0];
                         result.scCode = orgCode.split("|")[1];
