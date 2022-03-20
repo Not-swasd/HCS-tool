@@ -142,16 +142,13 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                     else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${orgList.length})`)] });
                 };
                 await Promise.all(chunk.map(async (orgCode) => {
-                    // let orgCode = await getOrgCode(school["학교명"], schoolLevel, regionCodes[region]);
-                    // if (!orgCode) return;
-                    let postData = {
+                    let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, {
                         "orgCode": orgCode.split("|")[0],
                         "name": encrypt.encrypt(name),
                         "birthday": encrypt.encrypt(birthday.join("")),
                         "stdntPNo": null,
                         "loginType": "school"
-                    };
-                    let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
+                    }, {
                         proxy,
                         headers: {
                             "Accept": "application/json, text/plain, */*",
