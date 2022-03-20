@@ -130,7 +130,7 @@ function findSchool(name, birthday, region, special = false, interaction = null)
             orgList = !!region ? orgList[region] : Object.values(orgList).reduce((a, b) => a.concat(b));
             let description = "";
             orgList = orgList.reduce((all, one, i) => {
-                const ch = Math.floor(i / 200);
+                const ch = Math.floor(i / 300);
                 all[ch] = [].concat((all[ch] || []), one);
                 return all
             }, []); //chunking
@@ -175,13 +175,11 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                         }
                     }).catch(err => err.response);
                     result = !result ? null : result.data;
-                    if (result) {
+                    if (!!result && !!result.orgName && !result.isError) {
                         result.orgCode = orgCode.split("|")[0];
                         result.scCode = orgCode.split("|")[1];
                         result.region = r[orgCode.split("|")[1]];
                         result.token = "privacy";
-                    };
-                    if (!!result && !!result.orgName && !result.isError) {
                         s.push(result);
                         interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
                     };
