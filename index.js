@@ -34,7 +34,6 @@ JzGs9MMMWtQIDAQAB
 const { default: axios } = require("axios-https-proxy-fix");
 global.config = require('./config.json');
 let proxy = !!config.proxy.host && config.proxy.port ? config.proxy : false;
-const axiosRetry = require('axios-retry');
 const fs = require("fs");
 const express = require("express");
 const app = express();
@@ -50,7 +49,7 @@ global.r = {
     "use": "울산광역시",
     "sje": "세종특별자치시",
     "goe": "경기도",
-    "gwe": "강원도",
+    "kwe": "강원도",
     "cbe": "충청북도",
     "cne": "충청남도",
     "jbe": "전라북도",
@@ -173,7 +172,6 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                 }).then(res => res.data.key).catch(e => "");
                 if (!!res) searchKey = res;
             }, 90000); // hcs 서치 키 만료 시간: 2분
-            let error = [];
             for (chunk of orgList) {
                 currentPage++;
                 if (interaction) {
@@ -212,8 +210,8 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                             "X-Requested-With": "XMLHttpRequest",
                         },
                     }).catch(err => { return err.response ? err.response : { status: "error", err } });
-                    result.status == "error" && error.push(postData);
-                    if (!!result.data && !!result.data.orgName) {
+                    result = result && result.data;
+                    if (!!result && !!result.orgName) {
                         result.orgCode = orgCode.split("|")[0];
                         result.scCode = orgCode.split("|")[1];
                         result.region = r[orgCode.split("|")[1]];
@@ -223,7 +221,6 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                     };
                 }));
             };
-
             resolve({
                 success: true,
                 message: `해당 정보로 총 ${s.length}개의 학교를 찾았습니다.`,
@@ -240,6 +237,10 @@ function findSchool(name, birthday, region, special = false, interaction = null)
             clearInterval(searchKeyInterval);
         };
     });
+};
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 };
 
 Array.prototype.remove = function (element) {
