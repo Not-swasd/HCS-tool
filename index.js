@@ -1,4 +1,3 @@
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0
 const { Client, Intents, Collection, MessageEmbed, CommandInteraction } = require("discord.js");
 const client = new Client({
     "fetchAllMembers": true,
