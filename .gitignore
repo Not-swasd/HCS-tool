@@ -1,2 +1,4 @@
 *.7z
 config.json
+test.js
+node_modules/
