@@ -150,7 +150,8 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                     "Sec-Fetch-Dest": "empty",
                     "Referer": "https://hcs.eduro.go.kr/",
                     "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
-                }
+                },
+                timeout: 5000
             }).then(res => res.data.key).catch(e => "");
             if (!searchKey) return resolve({ success: false, message: "서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요." });
             searchKeyInterval = setInterval(async () => {
