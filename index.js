@@ -239,10 +239,6 @@ function findSchool(name, birthday, region, special = false, interaction = null)
     });
 };
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-};
-
 Array.prototype.remove = function (element) {
     var index = this.indexOf(element);
     if (index > -1) this.splice(index, 1);
