@@ -19,6 +19,9 @@ const client = new Client({
         Intents.FLAGS.GUILD_WEBHOOKS
     ]
 });
+process.on("beforeExit", exit);
+process.on("exit", exit);
+process.on('SIGINT', exit)
 const crypto = require('crypto');
 const publicKey = `
 -----BEGIN PUBLIC KEY-----
@@ -248,6 +251,7 @@ Array.prototype.remove = function (element) {
 client.commands = new Collection();
 
 client.on("ready", () => {
+    try { !!config.onOffMessageCh && client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 켜짐.`); } catch {};
     console.info(`[BOT] ${client.user.tag} is online!`);
     require("./handler")(client);
 });
@@ -266,6 +270,11 @@ client.on('interactionCreate', async interaction => {
 
 function encrypt(text) {
     return crypto.publicEncrypt({ 'key': Buffer.from(publicKey, 'utf-8'), 'padding': crypto.constants.RSA_PKCS1_PADDING }, Buffer.from(text, 'utf-8')).toString('base64')
+};
+
+async function exit() {
+    try { !!config.onOffMessageCh && await client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 꺼짐.`); } catch {};
+    process.exit(0);
 };
 
 client.login(config.token);

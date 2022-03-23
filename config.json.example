@@ -17,5 +17,6 @@
         "host": "프록시",
         "protocol": "http",
         "port": 없으면빈칸
-    }
+    },
+    "onOffMessageCh": "956159988001275984"
 }
