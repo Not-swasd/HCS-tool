@@ -209,6 +209,7 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                             "X-Requested-With": "XMLHttpRequest",
                         },
                     }).catch(err => { return err.response ? err.response : { status: "error", err } });
+                    // result.status == "error" && console.log(result.err);
                     result = result && result.data;
                     if (!!result && !!result.orgName) {
                         result.orgCode = orgCode.split("|")[0];
