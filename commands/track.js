@@ -34,7 +34,7 @@ module.exports = {
 	 */
 	async execute(interaction, client) {
 		try {
-			if (using.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 기다리쇼").setColor("RED")], ephemeral: true});
+			if (using.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED")], ephemeral: true});
 			if (!config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED")], ephemeral: true });
 			let startedTime = Date.now();
 			let region = interaction.options.getString("지역");
