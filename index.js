@@ -40,7 +40,7 @@ const express = require("express");
 const app = express();
 let schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
 global.using = [];
-let r = {
+global.r = {
     "sen": "서울특별시",
     "pen": "부산광역시",
     "dge": "대구광역시",
