@@ -20,8 +20,7 @@ const client = new Client({
     ]
 });
 process.on("beforeExit", exit);
-process.on("exit", exit);
-process.on('SIGINT', exit)
+process.on('SIGINT', exit);
 const crypto = require('crypto');
 const publicKey = `
 -----BEGIN PUBLIC KEY-----
