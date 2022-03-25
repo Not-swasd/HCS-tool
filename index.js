@@ -38,9 +38,9 @@ let proxy = !!config.proxy.host && config.proxy.port ? config.proxy : false;
 const fs = require("fs");
 const express = require("express");
 const app = express();
-global.schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
+let schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
 global.using = [];
-global.r = {
+let r = {
     "sen": "서울특별시",
     "pen": "부산광역시",
     "dge": "대구광역시",
@@ -97,17 +97,6 @@ app.post("/getSchool", async (req, res) => {
     };
 });
 
-function getSchoolInfo(name, level, region) {
-    return new Promise(async resolve => {
-        try {
-            let data = await axios.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${region}&schulCrseScCode=${level === "초등학교" ? "2" : level === "중학교" ? "3" : "4"}&orgName=${encodeURIComponent(name)}&loginType=school`, { proxy }).then(res => res.data);
-            if (data && data.schulList && data.schulList.length >= 1) return resolve(data);
-        } catch (e) {
-            return resolve(false);
-        };
-        resolve(false);
-    });
-};
 global.findSchool = findSchool;
 /**
  * 
