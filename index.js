@@ -59,7 +59,7 @@ global.r = {
     "gne": "경상남도",
     "jje": "제주특별자치도"
 };
-let using = [];
+global.using = [];
 app.listen(6975, () => console.info("[Server] Listening on port 6975"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
