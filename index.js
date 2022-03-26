@@ -59,6 +59,17 @@ global.r = {
     "gne": "경상남도",
     "jje": "제주특별자치도"
 };
+let headers = {
+    "Connection": "keep-alive",
+    "Accept": "application/json, text/plain, */*",
+    "X-Requested-With": "XMLHttpRequest",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Dest": "empty",
+    "Origin": "https://hcs.eduro.go.kr",
+    "Referer": "https://hcs.eduro.go.kr/",
+};
 global.using = [];
 app.listen(6975, () => console.info("[Server] Listening on port 6975"));
 app.use(express.json());
@@ -128,39 +139,10 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                 return all
             }, []); //chunking
             let currentPage = 0;
-            let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", {
-                proxy, headers: {
-                    "Connection": "keep-alive",
-                    "Accept": "application/json, text/plain, */*",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "sec-ch-ua-mobile": "?0",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
-                    "sec-ch-ua-platform": "\"Windows\"",
-                    "Sec-Fetch-Site": "same-origin",
-                    "Sec-Fetch-Mode": "cors",
-                    "Sec-Fetch-Dest": "empty",
-                    "Referer": "https://hcs.eduro.go.kr/",
-                    "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
-                },
-                timeout: 5000
-            }).then(res => res.data.key).catch(e => "");
+            let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
             if (!searchKey) return resolve({ success: false, message: "서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요." });
             searchKeyInterval = setInterval(async () => {
-                let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", {
-                    proxy, headers: {
-                        "Connection": "keep-alive",
-                        "Accept": "application/json, text/plain, */*",
-                        "X-Requested-With": "XMLHttpRequest",
-                        "sec-ch-ua-mobile": "?0",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
-                        "sec-ch-ua-platform": "\"Windows\"",
-                        "Sec-Fetch-Site": "same-origin",
-                        "Sec-Fetch-Mode": "cors",
-                        "Sec-Fetch-Dest": "empty",
-                        "Referer": "https://hcs.eduro.go.kr/",
-                        "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
-                    }
-                }).then(res => res.data.key).catch(e => "");
+                let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
                 if (!!res) searchKey = res;
             }, 90000); // hcs 서치 키 만료 시간: 2분
             for (chunk of orgList) {
@@ -178,29 +160,7 @@ function findSchool(name, birthday, region, special = false, interaction = null)
                         "loginType": "school",
                         searchKey
                     };
-                    let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, {
-                        proxy,
-                        headers: {
-                            "Accept": "application/json, text/plain, */*",
-                            "Accept-Encoding": "gzip, deflate, br",
-                            "Accept-Language": "ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7",
-                            "Cache-Control": "no-cache",
-                            "Connection": "keep-alive",
-                            "Content-Type": "application/json;charset=UTF-8",
-                            "Host": `${orgCode.split("|")[1]}hcs.eduro.go.kr`,
-                            "Origin": "https://hcs.eduro.go.kr",
-                            "Pragma": "no-cache",
-                            "Referer": "https://hcs.eduro.go.kr/",
-                            "sec-ch-ua": `" Not A;Brand";v="99", "Chromium";v="98", "Whale";v="3"`,
-                            "sec-ch-ua-mobile": "?0",
-                            "sec-ch-ua-platform": `"Windows"`,
-                            "Sec-Fetch-Dest": "empty",
-                            "Sec-Fetch-Mode": "cors",
-                            "Sec-Fetch-Site": "same-site",
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
-                            "X-Requested-With": "XMLHttpRequest",
-                        },
-                    }).catch(err => { return err.response ? err.response : { status: "error", err } });
+                    let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, { proxy, headers }).catch(err => { return err.response ? err.response : { status: "error", err } });
                     // result.status == "error" && console.log(result.err);
                     result = result && result.data;
                     if (!!result && !!result.orgName) {
@@ -238,7 +198,7 @@ Array.prototype.remove = function (element) {
 client.commands = new Collection();
 
 client.on("ready", () => {
-    try { !!config.onOffMessageCh && client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 켜짐.`); } catch {};
+    try { !!config.onOffMessageCh && client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 켜짐.`); } catch { };
     console.info(`[BOT] ${client.user.tag} is online!`);
     require("./handler")(client);
 });
@@ -255,12 +215,36 @@ client.on('interactionCreate', async interaction => {
     };
 });
 
+async function sendValidatePassword(token, code) {
+    try {
+        if (!token || !code) throw new Error("잘못됨.");
+        // let initTime = crypto.createHash('md5').update(Date.now().toString()).digest('hex'); //initTime은 abcdef1234567890로만 이루어져 있고, 32자 여야 함. (그냥 MD5로 암호화하면 됨. 값은 상관 X)
+        // let transkeyUuid = crypto.randomBytes(128).toString("hex"); //transkeyUuid는 아무 값이나 입력해도 됨. 글자 수 제한 X. 문자 제한 X
+        let headers = {
+            "Connection": "keep-alive",
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
+            "X-Requested-With": "XMLHttpRequest",
+            "Origin": "https://hcs.eduro.go.kr",
+            "Referer": "https://hcs.eduro.go.kr/",
+        };
+        let keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
+        headers["Content-Type"] = "application/json;charset=UTF-8";
+        let res = await axios.post(`https://${code}hcs.eduro.go.kr/v2/validatePassword`, { "password": `{"raon":[{"id":"password","enc":"","hmac":"","keyboardType":"number","keyIndex":"${keyIndex}","fieldType":"password","seedKey":"","initTime":"${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}","ExE2E":"false"}]}`, "deviceUuid": "", "makeSession": true }, { proxy, headers });
+        //initTime이 다르면 되고, 같으면 안되네..?ㅋㅋㅋㅋ
+        return res.data;
+    } catch {
+        return false;
+    };
+};
+
 function encrypt(text) {
     return crypto.publicEncrypt({ 'key': Buffer.from(publicKey, 'utf-8'), 'padding': crypto.constants.RSA_PKCS1_PADDING }, Buffer.from(text, 'utf-8')).toString('base64')
 };
 
 async function exit() {
-    try { !!config.onOffMessageCh && await client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 꺼짐.`); } catch {};
+    try { !!config.onOffMessageCh && await client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 꺼짐.`); } catch { };
     process.exit(0);
 };
 
