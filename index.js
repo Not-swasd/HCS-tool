@@ -215,7 +215,7 @@ client.on('interactionCreate', async interaction => {
     };
 });
 
-async function sendValidatePassword(token, code) {
+async function sendValidatePassword(token, code) { //잠시 보류
     try {
         if (!token || !code) throw new Error("잘못됨.");
         // let initTime = crypto.createHash('md5').update(Date.now().toString()).digest('hex'); //initTime은 abcdef1234567890로만 이루어져 있고, 32자 여야 함. (그냥 MD5로 암호화하면 됨. 값은 상관 X)
