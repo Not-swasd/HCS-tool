@@ -3,7 +3,7 @@ const { CommandInteraction, Client, MessageEmbed } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('track')
+		.setName('getSchool')
 		.setDescription('Search schools by name and birthday')
 		.addStringOption(option => option.setName("이름").setRequired(true).setDescription("이름"))
 		.addStringOption(option => option.setName("생년월일").setRequired(true).setDescription("생년월일 E.g. 070611"))
