@@ -3,8 +3,8 @@ const { CommandInteraction, Client, MessageEmbed } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('getSchool')
-		.setDescription('이름과 생년월일로 생일을 가져옵니다.')
+		.setName('getschool')
+		.setDescription('Get the school by name and date of birth.')
 		.addStringOption(option => option.setName("이름").setRequired(true).setDescription("이름"))
 		.addStringOption(option => option.setName("생년월일").setRequired(true).setDescription("생년월일 E.g. 070611"))
 		.addStringOption(option => option.setName("지역").addChoices([
