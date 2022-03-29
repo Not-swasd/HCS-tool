@@ -261,6 +261,7 @@ async function sendValidatePassword(token, code) { //잠시 보류
 global.getBirthdate = getBirthdate;
 async function getBirthdate(name, birthYear, school, interaction = null) {
     let searchKeyInterval;
+    let data = [];
     try {
         if ((!name || name.length < 2 || name.length > 4 || /[^가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요");
         if (Number(birthYear) < 04 || Number(birthYear) > 15) throw new Error("출생연도를 다시 확인해 주세요");
@@ -276,7 +277,6 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
         }, 90000); // hcs 서치 키 만료 시간: 2분
         let description = "";
         let startedTime = Date.now();
-        let data = [];
         const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
         let currentPage = 0;
         for (let month = 0; month < monthDays.length; month++) {
@@ -311,12 +311,9 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
             }));
         };
         if (!data.length > 1) throw new Error("정보를 찾을 수 없습니다.");
-        return {
-            success: true,
-            data
-        };
+        return { success: true, data };
     } catch (e) {
-        return { success: false, message: e.message };
+        return { success: false, message: e.message, data };
     } finally {
         clearInterval(searchKeyInterval);
     };
