@@ -128,8 +128,7 @@ async function findSchool(name, birthday, region, special = false, interaction =
         if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
         birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
         if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
-        let schoolLevel = special ? "기타" : Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중" : "고";
-        let orgList = schools[schoolLevel];
+        let orgList = schools.filter(x => x.level == (special ? "특수" : Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중" : "고"))
         // orgList = !!region ? Object.keys(orgList).filter(x => orgList[x].region == region) : Object.keys(orgList);
         orgList = !!region ? orgList.filter(x => x.region == region) : orgList;
         let description = "";
@@ -140,7 +139,7 @@ async function findSchool(name, birthday, region, special = false, interaction =
         }, []); //chunk
         let currentPage = 0;
         let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
-        if (!searchKey) return { success: false, message: "서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요." };
+        if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
         searchKeyInterval = setInterval(async () => {
             let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
             if (!!res) searchKey = res;
@@ -157,15 +156,14 @@ async function findSchool(name, birthday, region, special = false, interaction =
                 //     region: schools[schoolLevel][org].region,
                 //     code: org
                 // };
-                let postData = {
+                let result = await axios.post(`https://${codes[org.region]}hcs.eduro.go.kr/v2/findUser`, {
                     "orgCode": org.code,
                     "name": encrypt(name),
                     "birthday": encrypt(birthday.join("")),
                     "stdntPNo": null,
                     "loginType": "school",
                     searchKey
-                };
-                let result = await axios.post(`https://${codes[org.region]}hcs.eduro.go.kr/v2/findUser`, postData, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
+                }, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
                 // result.status == "error" && console.log(result.err);
                 result = result && result.data;
                 if (!!result && !!result.orgName) {
