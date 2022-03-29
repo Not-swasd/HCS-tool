@@ -36,12 +36,12 @@ module.exports = {
 		try {
 			if (using.includes(interaction.user.id) && !config.owners.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED")], ephemeral: true });
 			if (!config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED")], ephemeral: true });
-			let startedTime = Date.now();
 			let region = interaction.options.getString("지역");
 			let name = interaction.options.getString("이름");
 			let birthday = interaction.options.getString("생년월일");
 			let special = interaction.options.getBoolean("특수학교여부");
 			await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (약 1분 소요)").setColor("BLUE")], ephemeral: true });
+			let startedTime = Date.now();
 			using.push(interaction.user.id);
 			let school = await findSchool(name, birthday, special, region, interaction);
 			using.remove(interaction.user.id);
