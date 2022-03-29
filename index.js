@@ -306,7 +306,7 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
                         day: day
                     };
                     data.push(result);
-                    interaction && interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${monthDays.length})`).setDescription(description += `\n**\`${birthYear}년 ${month + 1}월 ${day}일\`** (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
+                    interaction && interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 성공 (페이지 ${currentPage}/${monthDays.length})`).setDescription(description += `\n**\`${birthYear}년 ${month + 1}월 ${day}일\`** (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
                 };
             }));
         };
