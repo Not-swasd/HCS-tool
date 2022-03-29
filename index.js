@@ -38,7 +38,7 @@ let proxy = !!config.proxy.host && config.proxy.port ? config.proxy : false;
 const fs = require("fs");
 const express = require("express");
 const app = express();
-let schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
+global.schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
 global.using = [];
 let codes = {
     "서울특별시": "sen",
@@ -124,7 +124,7 @@ async function findSchool(name, birthday, region, special = false, interaction =
     let s = [];
     let startedTime = Date.now();
     try {
-        if ((!name || name.length < 2 || name.length > 4 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요.");
+        if ((!name || name.length < 2 || name.length > 4 || /[^가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요.");
         if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
         birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
         if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
