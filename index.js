@@ -40,24 +40,24 @@ const express = require("express");
 const app = express();
 let schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
 global.using = [];
-global.r = {
-    "sen": "서울특별시",
-    "pen": "부산광역시",
-    "dge": "대구광역시",
-    "ice": "인천광역시",
-    "gen": "광주광역시",
-    "dje": "대전광역시",
-    "use": "울산광역시",
-    "sje": "세종특별자치시",
-    "goe": "경기도",
-    "kwe": "강원도",
-    "cbe": "충청북도",
-    "cne": "충청남도",
-    "jbe": "전라북도",
-    "jne": "전라남도",
-    "gbe": "경상북도",
-    "gne": "경상남도",
-    "jje": "제주특별자치도"
+let codes = {
+    "서울특별시": "sen",
+    "부산광역시": "pen",
+    "대구광역시": "dge",
+    "인천광역시": "ice",
+    "광주광역시": "gen",
+    "대전광역시": "dje",
+    "울산광역시": "use",
+    "세종특별자치시": "sje",
+    "경기도": "goe",
+    "강원도": "kwe",
+    "충청북도": "cbe",
+    "충청남도": "cne",
+    "전라북도": "jbe",
+    "전라남도": "jne",
+    "경상북도": "gbe",
+    "경상남도": "gne",
+    "제주특별자치도": "jje"
 };
 let headers = {
     "Connection": "keep-alive",
@@ -119,75 +119,78 @@ global.findSchool = findSchool;
  * @param {CommandInteraction} interaction 
  * @returns {Promise<{ success: boolean, message: string, schools: array }>}
  */
-function findSchool(name, birthday, region, special = false, interaction = null) {
-    return new Promise(async resolve => {
-        let searchKeyInterval;
-        let s = [];
-        let startedTime = Date.now();
-        try {
-            if ((!name || name.length < 2 || name.length > 4 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요.");
-            if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
-            birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
-            if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
-            let schoolLevel = Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중학교" : "고등학교";
-            let orgList = schools[special ? "기타" : schoolLevel];
-            orgList = !!region ? orgList[region] : Object.values(orgList).reduce((a, b) => a.concat(b));
-            let description = "";
-            orgList = orgList.reduce((all, one, i) => {
-                const ch = Math.floor(i / 300);
-                all[ch] = [].concat((all[ch] || []), one);
-                return all
-            }, []); //chunking
-            let currentPage = 0;
-            let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
-            if (!searchKey) return resolve({ success: false, message: "서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요." });
-            searchKeyInterval = setInterval(async () => {
-                let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
-                if (!!res) searchKey = res;
-            }, 90000); // hcs 서치 키 만료 시간: 2분
-            for (chunk of orgList) {
-                currentPage++;
-                if (interaction) {
-                    if (s.length >= 1) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description)] });
-                    else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${orgList.length})`)] });
-                };
-                await Promise.all(chunk.map(async (orgCode) => {
-                    let postData = {
-                        "orgCode": orgCode.split("|")[0],
-                        "name": encrypt(name),
-                        "birthday": encrypt(birthday.join("")),
-                        "stdntPNo": null,
-                        "loginType": "school",
-                        searchKey
-                    };
-                    let result = await axios.post(`https://${orgCode.split("|")[1]}hcs.eduro.go.kr/v2/findUser`, postData, { proxy, headers }).catch(err => { return err.response ? err.response : { status: "error", err } });
-                    // result.status == "error" && console.log(result.err);
-                    result = result && result.data;
-                    if (!!result && !!result.orgName) {
-                        result.orgCode = orgCode.split("|")[0];
-                        result.scCode = orgCode.split("|")[1];
-                        result.region = r[orgCode.split("|")[1]];
-                        s.push(result);
-                        interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description += `\n**\`${r[result.scCode]} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
-                    };
-                }));
+async function findSchool(name, birthday, region, special = false, interaction = null) {
+    let searchKeyInterval;
+    let s = [];
+    let startedTime = Date.now();
+    try {
+        if ((!name || name.length < 2 || name.length > 4 || /[^ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요.");
+        if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
+        birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
+        if (Number(birthday[0]) < 04 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
+        let schoolLevel = special ? "기타" : Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초" : Number(birthday[0]) <= 09 && Number(birthday[0]) >= 07 ? "중" : "고";
+        let orgList = schools[schoolLevel];
+        // orgList = !!region ? Object.keys(orgList).filter(x => orgList[x].region == region) : Object.keys(orgList);
+        orgList = !!region ? orgList.filter(x => x.region == region) : orgList;
+        let description = "";
+        orgList = orgList.reduce((all, one, i) => {
+            const ch = Math.floor(i / 200);
+            all[ch] = [].concat((all[ch] || []), one);
+            return all
+        }, []); //chunk
+        let currentPage = 0;
+        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
+        if (!searchKey) return { success: false, message: "서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요." };
+        searchKeyInterval = setInterval(async () => {
+            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 5000 }).then(res => res.data.key).catch(e => "");
+            if (!!res) searchKey = res;
+        }, 90000); // hcs 서치 키 만료 시간: 2분
+        for (chunk of orgList) {
+            currentPage++;
+            if (interaction) {
+                if (s.length >= 1) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description)] });
+                else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${orgList.length})`)] });
             };
-            resolve({
-                success: true,
-                message: `해당 정보로 총 ${s.length}개의 학교를 찾았습니다.`,
-                schools: s
-            });
-        } catch (e) {
-            console.log(e)
-            resolve({
-                success: false,
-                message: e.message,
-                schools: s
-            });
-        } finally {
-            clearInterval(searchKeyInterval);
+            await Promise.all(chunk.map(async (org) => {
+                // org = {
+                //     name: schools[schoolLevel][org].name,
+                //     region: schools[schoolLevel][org].region,
+                //     code: org
+                // };
+                let postData = {
+                    "orgCode": org.code,
+                    "name": encrypt(name),
+                    "birthday": encrypt(birthday.join("")),
+                    "stdntPNo": null,
+                    "loginType": "school",
+                    searchKey
+                };
+                let result = await axios.post(`https://${codes[org.region]}hcs.eduro.go.kr/v2/findUser`, postData, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
+                // result.status == "error" && console.log(result.err);
+                result = result && result.data;
+                if (!!result && !!result.orgName) {
+                    result.orgCode = org.code;
+                    result.scCode = codes[org.region];
+                    result.region = org.region;
+                    s.push(result);
+                    interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description += `\n**\`${result.region} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
+                };
+            }));
         };
-    });
+        return {
+            success: true,
+            message: `해당 정보로 총 ${s.length}개의 학교를 찾았습니다.`,
+            schools: s
+        };
+    } catch (e) {
+        return {
+            success: false,
+            message: e.message,
+            schools: s
+        };
+    } finally {
+        clearInterval(searchKeyInterval);
+    };
 };
 
 Array.prototype.remove = function (element) {
