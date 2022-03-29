@@ -207,7 +207,7 @@ client.on("ready", () => {
 });
 
 client.on("messageCreate", async message => {
-    if(config.owners.includes(message.author.id) && message.content.startsWith("!eval ") && message.channel.type === "DM") {
+    if (config.owners.includes(message.author.id) && message.content.startsWith("!eval ") && message.channel.type === "DM") {
         try {
             let e = eval(message.content.slice(6));
             message.reply({ embeds: [new MessageEmbed().setTitle(`✅ Success`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("GREEN").setTimestamp()] });
