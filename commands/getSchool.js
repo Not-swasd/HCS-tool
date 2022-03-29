@@ -4,7 +4,7 @@ const { CommandInteraction, Client, MessageEmbed } = require('discord.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('getschool')
-		.setDescription('Get the school by name and date of birth.')
+		.setDescription('No dec')
 		.addStringOption(option => option.setName("이름").setRequired(true).setDescription("이름"))
 		.addStringOption(option => option.setName("생년월일").setRequired(true).setDescription("생년월일 E.g. 070611"))
 		.addStringOption(option => option.setName("지역").addChoices([

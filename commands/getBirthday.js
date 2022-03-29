@@ -4,7 +4,7 @@ const { CommandInteraction, Client, MessageEmbed } = require('discord.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('getbirthday')
-		.setDescription('Get Birthdate.')
+		.setDescription('No dec')
 		.addStringOption(option => option.setName("이름").setRequired(true).setDescription("이름"))
 		.addStringOption(option => option.setName("출생연도").setRequired(true).setDescription("생년"))
 		.addStringOption(option => option.setName("학교").setRequired(true).setDescription("학교 코드")),
