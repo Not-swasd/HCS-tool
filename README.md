@@ -1,5 +1,5 @@
 # HCS-tool
-<a href="https://nodejs.org/ko/" target="_blank"><img src="https://i.ibb.co/jhzwFCW/nodejs-min.png" alt="Language: Node.js" border="0"></a>
+[![Language](https://img.shields.io/badge/Language-Node.js-brightgreen?logo=node.js&style=flat-square)](https://nodejs.org/ko)<br>
 
 ## 📌필독 사항
  * 교육 목적으로만 사용해주세요.
