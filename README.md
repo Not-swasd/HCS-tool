@@ -31,7 +31,12 @@ node index.js
 4. 디스코드 서버에 봇을 초대하고 사용하면 됨 (슬래시 커맨드).
 
 ## 사진
-![plot](./directory_1/directory_2/.../directory_n/plot.png)
+**getSchool:**<br>
+![getSchool](./images/getSchool.png)<br>
+**getBirthday:**<br>
+![getBirthday](./images/getBirthday.png)<br>
+**findSchool:**<br>
+![findSchool](./images/findSchool.png)<br>
 
 ## 🎫라이선스
 [GPLv3](https://olis.or.kr/license/Detailselect.do?lId=1072)
