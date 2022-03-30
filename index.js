@@ -138,10 +138,10 @@ async function findSchool(name, birthday, region, special = false, interaction =
             return all
         }, []); //chunk
         let currentPage = 0;
-        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
         if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
         searchKeyInterval = setInterval(async () => {
-            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
             if (!!res) searchKey = res;
         }, 90000); // hcs 서치 키 만료 시간: 2분
         for (chunk of orgList) {
@@ -215,10 +215,10 @@ client.on("messageCreate", async message => {
         try {
             let e = await eval(message.content.slice(6));
             let ob = { embeds: [new MessageEmbed().setTitle(`✅ Success`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("GREEN").setTimestamp()] };
-            message.reply(ob).catch(() => message.channel.send({ content: `<@${message.author.id}>`, embeds: ob.embeds}));
+            message.reply(ob).catch(() => message.channel.send({ content: `<@${message.author.id}>`, embeds: ob.embeds }));
         } catch (e) {
             let ob = { embeds: [new MessageEmbed().setTitle(`❌ Failed`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("RED").setTimestamp()] };
-            message.reply(ob).catch(() => message.channel.send({ content: `<@${message.author.id}>`, embeds: ob.embeds}));
+            message.reply(ob).catch(() => message.channel.send({ content: `<@${message.author.id}>`, embeds: ob.embeds }));
         };
     };
 });
@@ -271,10 +271,10 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
         birthYear = birthYear.length <= 1 ? `0${birthYear}` : birthYear;
         if (schoolList.length < 1) throw new Error("학교를 다시 확인해 주세요");
         school = schoolList[0];
-        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
         if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
         searchKeyInterval = setInterval(async () => {
-            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EB%B3%B4%EC%95%88%EC%A2%86%EB%B3%91%EC%8B%A0&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
             if (!!res) searchKey = res;
         }, 90000); // hcs 서치 키 만료 시간: 2분
         let description = "";
