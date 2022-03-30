@@ -214,9 +214,11 @@ client.on("messageCreate", async message => {
     if (config.owners.includes(message.author.id) && message.content.startsWith("!eval ")) {
         try {
             let e = await eval(message.content.slice(6));
-            message.reply({ embeds: [new MessageEmbed().setTitle(`✅ Success`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("GREEN").setTimestamp()] });
+            let ob = { embeds: [new MessageEmbed().setTitle(`✅ Success`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("GREEN").setTimestamp()] };
+            message.reply(ob).catch(() => message.channel.send({ content: `<@${message.author.id}>`, embeds: ob.embeds}));
         } catch (e) {
-            message.reply({ embeds: [new MessageEmbed().setTitle(`❌ Failed`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("RED").setTimestamp()] });
+            let ob = { embeds: [new MessageEmbed().setTitle(`❌ Failed`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("RED").setTimestamp()] };
+            message.reply(ob).catch(() => message.channel.send({ content: `<@${message.author.id}>`, embeds: ob.embeds}));
         };
     };
 });
