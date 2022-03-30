@@ -27,7 +27,7 @@ module.exports = {
 			if (!result.success) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ ${result.message}`).setColor("RED")], ephemeral: true });
 			if (result.data.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요! (소요된 시간: ${(Date.now() - startedTime) / 1000}초)`).setColor("RED")], ephemeral: true });
 			let order = 0;
-			await interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 끝").setDescription(`**\`${name}\`**님에 대한 생일 정보를 ${result.data.length}개 찾았습니다:\n${result.data.map(x => `\n${order += 1}. **\`${x.birthday.text}생\`**`).join("\n")}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)] });
+			await interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 끝").setDescription(`**\`${name}\`**님에 대한 생일 정보를 ${result.data.length}개 찾았습니다:\n${result.data.map(x => `${order += 1}. **\`${x.birthday.text}생\`**`).join("\n")}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)] });
 		} catch (e) {
 			using.remove(interaction.user.id);
 			await interaction.editReply({ embeds: [new MessageEmbed().setTitle("❌ 오류가 발생했습니다!").setDescription(`내용: \`\`\`xl\n${e.message}\`\`\``).setColor("RED")], ephemeral: true });
