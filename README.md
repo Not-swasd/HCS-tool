@@ -18,15 +18,20 @@
  * 특정 상대 자가진단 못하게 하기
 
 ## 📥사용
-> [Node.js](https://nodejs.org/ko/) 다운로드는 필수입니다.
+> [Node.js](https://nodejs.org/ko/)와 [Discord](https://discord.com) 다운로드는 필수입니다.
 1. 모듈 설치
 ```
 npm install
 ```
-2. 실행
+2. config.json.example을 config.json으로 바꾼 뒤 따로 설정을 한다.
+3. 실행
 ```
 node index.js
 ```
+4. 디스코드 서버에 봇을 초대하고 사용하면 됨 (슬래시 커맨드).
+
+## 사진
+![plot](./directory_1/directory_2/.../directory_n/plot.png)
 
 ## 🎫라이선스
 [GPLv3](https://olis.or.kr/license/Detailselect.do?lId=1072)
