@@ -30,7 +30,7 @@ node index.js
 ```
 4. 디스코드 서버에 봇을 초대하고 사용하면 됨 (슬래시 커맨드).
 
-## 사진
+## 📸사진
 **getSchool:**<br>
 ![getSchool](./images/getSchool.png)<br>
 **getBirthday:**<br>
