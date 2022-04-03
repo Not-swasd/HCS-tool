@@ -13,10 +13,16 @@
         "사용할 수 없는 이름"
     ],
     "proxy": {
-        "auth": "",
+        "auth": {
+            "username": "",
+            "password": ""
+        },
         "host": "프록시",
         "protocol": "http",
         "port": 없으면빈칸
     },
-    "onOffMessageCh": "956159988001275984"
+    "notifyChannels": {
+        "onOff": "봇 켜짐/꺼짐 메세지 채널ID",
+        "hcsUpdate": "자가진단 클라이언트 업데이트 메세지 채널ID"
+    }
 }
