@@ -1,3 +1,4 @@
+// 클라이언트 버전 업데이트 interval 체크 하기
 const { Client, Intents, Collection, MessageEmbed, CommandInteraction } = require("discord.js");
 const client = new Client({
     "fetchAllMembers": true,
@@ -71,7 +72,7 @@ let headers = {
     "Referer": "https://hcs.eduro.go.kr/",
 };
 global.using = [];
-app.listen(6975, () => console.info("[Server] Listening on port 6975"));
+app.listen(6975, () => console.info("[SERVER] Listening on port 6975"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.all("*", (req, res, next) => {
@@ -205,9 +206,29 @@ Array.prototype.remove = function (element) {
 client.commands = new Collection();
 
 client.on("ready", () => {
-    try { !!config.onOffMessageCh && client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 켜짐.`); } catch { };
-    console.info(`[BOT] ${client.user.tag} is online!`);
-    require("./handler")(client);
+    try {
+        console.info(`[BOT] ${client.user.tag} is online!`);
+        require("./handler")(client);
+        let hcsClientVersion = "";
+        setInterval(async function () {
+            try {
+                let res = await axios.get("https://hcs.eduro.go.kr/error", { proxy, timeout: 10000 }).catch(error => {
+                    console.info("[ERROR] Maybe Proxy issue. Error: " + error.message);
+                    process.exit(1);
+                });
+                if (!!res && !!res.headers["x-client-version"] && res.headers["x-client-version"] !== hcsClientVersion) {
+                    hcsClientVersion = res.headers["x-client-version"];
+                    console.info(`[HCS-NOTIFY] HCS Client Updated. (ver: ${hcsClientVersion})`);
+                    let channel = client.channels.cache.get(config.notifyChannels.hcsUpdate);
+                    if (channel) {
+                        await channel.bulkDelete(99);
+                        channel.send({content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**HCS Client Updated.**\n\n**New version**: **\`${hcsClientVersion}\`**`).setColor("GREEN").setTimestamp()]});
+                    };
+                };
+            } catch { };
+        }, 1000);
+        !!config.notifyChannels.onOff && client.channels.cache.get(config.notifyChannels.onOff).send(`[${new Date().toLocaleString("ko-kr")}] 봇 켜짐.`);
+    } catch { };
 });
 
 client.on("messageCreate", async message => {
