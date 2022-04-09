@@ -109,7 +109,7 @@ app.post("/getSchool", async (req, res) => {
     };
 });
 
-global.findSchool = findSchool;
+global.getSchool = getSchool;
 /**
  * 
  * @param {array} orgList 
@@ -120,7 +120,7 @@ global.findSchool = findSchool;
  * @param {CommandInteraction} interaction 
  * @returns {Promise<{ success: boolean, message: string, schools: array }>}
  */
-async function findSchool(name, birthday, region, special = false, interaction = null) {
+async function getSchool(name, birthday, region, special = false, interaction = null) {
     let searchKeyInterval;
     let s = [];
     let startedTime = Date.now();

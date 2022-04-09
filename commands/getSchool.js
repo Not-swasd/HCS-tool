@@ -42,7 +42,7 @@ module.exports = {
 			await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (약 1분 소요)").setColor("BLUE")], ephemeral: true });
 			let startedTime = Date.now();
 			using.push(interaction.user.id);
-			let school = await findSchool(name, birthday, region, special, interaction);
+			let school = await getSchool(name, birthday, region, special, interaction);
 			using.remove(interaction.user.id);
 			if (!school.success) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ ${school.message}`).setColor("RED")], ephemeral: true });
 			if (school.schools.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요! (소요된 시간: ${(Date.now() - startedTime) / 1000}초)`).setColor("RED")], ephemeral: true });
