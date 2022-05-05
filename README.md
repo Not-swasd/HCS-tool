@@ -1,5 +1,6 @@
 # HCS-tool
 [![Language](https://img.shields.io/badge/Language-Node.js-brightgreen?logo=node.js&style=flat-square)](https://nodejs.org/ko)<br>
+5월5일에 확인했는데 막힌거같네요 레이트 리밋 아니면 다시 뚫어볼겠습니다
 
 ## 📌필독 사항
  * 교육 목적으로만 사용해주세요.
