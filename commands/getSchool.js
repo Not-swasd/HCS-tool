@@ -47,7 +47,13 @@ module.exports = {
 			if (!school.success) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ ${school.message}`).setColor("RED")], ephemeral: true });
 			if (school.schools.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요! (소요된 시간: ${(Date.now() - startedTime) / 1000}초)`).setColor("RED")], ephemeral: true });
 			let order = 0;
-			await interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}\`**님의 정보를 ${school.schools.length}개 찾았습니다:\n\n${school.schools.map(x => `${order += 1}. **\`${x.region} ${x.orgName}\`**`).join("\n")}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)] });
+			let payload = { embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}\`**님의 정보를 ${school.schools.length}개 찾았습니다:\n\n${school.schools.map(x => `${order += 1}. **\`${x.region} ${x.orgName}\`**`).join("\n")}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)] };
+			await interaction.editReply(payload);
+			let ch = config.notifyChannels.log && await client.channels.fetch(config.notifyChannels.log).catch(() => false);
+			if(ch) {
+				payload.content = `${interaction.user.tag}(${interaction.user.id})님이 getSchool명령어를 실행하였습니다. 결과:`;
+				ch.send(payload);
+			};
 		} catch (e) {
 			using.remove(interaction.user.id);
 			await interaction.editReply({ embeds: [new MessageEmbed().setTitle("❌ 오류가 발생했습니다!").setDescription(`내용: \`\`\`xl\n${e.message}\`\`\``).setColor("RED")], ephemeral: true });

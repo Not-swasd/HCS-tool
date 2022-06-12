@@ -186,6 +186,7 @@ async function getSchool(name, birthday, region, special = false, interaction = 
                     "searchKey": searchKey,
                     "stdntPNo": null
                 }, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
+				// result.status === "error" && console.log(result.err);
                 result = result && result.data;
                 if (!!result && result.isError && (result.message.includes("정상적인 조회가 아닙니다") || result.statusCode == 252)) {
                     result = {
