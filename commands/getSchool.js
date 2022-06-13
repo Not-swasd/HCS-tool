@@ -51,7 +51,7 @@ module.exports = {
 			await interaction.editReply(payload);
 			let ch = config.notifyChannels.log && await client.channels.fetch(config.notifyChannels.log).catch(() => false);
 			if(ch) {
-				payload.content = `${interaction.user.tag}(${interaction.user.id})님이 getSchool명령어를 실행하였습니다. 결과:`;
+				payload.content = `\`\`\`${interaction.user.tag}(${interaction.user.id})님이 명령어를 실행하였습니다.\n명령어: /${interaction.commandName} ${interaction.options.data.map(option => `[${option.name}: ${option.value}]`).join(" ")}\n결과:\`\`\``;
 				ch.send(payload);
 			};
 		} catch (e) {
