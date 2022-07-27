@@ -5,10 +5,7 @@
     ],
     "allowedUsers": [
         "봇을 사용할 수 있는 사람 디코 아이디"
-    ],
-    "allowedIps": [
-        "api 서버 사용할 수 있는 사람 아이피",
-    ],
+    ], //false로 설정하면 모두 다 쓸 수 있음.
     "blockedNames": [
         "사용할 수 없는 이름"
     ],
@@ -17,12 +14,12 @@
             "username": "",
             "password": ""
         },
-        "host": "프록시",
+        "host": "",
         "protocol": "http",
-        "port": 없으면빈칸
-    },
+        "port": 0
+    }, //프록시를 사용하지 않으신다면 이대로 두면 됩니다
     "notifyChannels": {
-        "onOff": "봇 켜짐/꺼짐 메세지 채널ID",
-        "hcsUpdate": "자가진단 클라이언트 업데이트 메세지 채널ID"
+        "onOff": "봇 켜짐/꺼짐 메세지 채널ID", //false로 설정하면 메세지 안보냄
+        "hcsUpdate": "자가진단 클라이언트 업데이트 메세지 채널ID" //false로 설정하면 메세지 안보냄
     }
 }

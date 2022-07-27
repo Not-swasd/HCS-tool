@@ -140,7 +140,7 @@ global.getSchool = getSchool;
  * @returns {Promise<{ success: boolean, message: string, schools: array }>}
  */
 async function getSchool(name, birthday, region, special = false, interaction = null) {
-    let searchKeyInterval;
+    let interval;
     let s = [];
     let startedTime = Date.now();
     try {
@@ -158,14 +158,15 @@ async function getSchool(name, birthday, region, special = false, interaction = 
             return all
         }, []); //chunk
         let currentPage = 0;
-        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
-        if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
-        let keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
-        searchKeyInterval = setInterval(async () => {
-            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
-            if (!!res) searchKey = res;
-            keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
-        }, 90000); // hcs 서치 키 만료 시간: 2분
+        let searchKey = await getSearchKey();
+        let keyIndex = await getKeyIndex();
+        if (!searchKey || !keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
+        interval = setInterval(async () => {
+            let t = await getSearchKey();
+            if (t) searchKey = t;
+            t = await getKeyIndex();
+            if (t) keyIndex = t;
+        }, 90000);
         for (chunk of orgList) {
             currentPage++;
             if (interaction) {
@@ -186,7 +187,7 @@ async function getSchool(name, birthday, region, special = false, interaction = 
                     "searchKey": searchKey,
                     "stdntPNo": null
                 }, { proxy, headers, timeout: 10000 }).catch(err => { return err.response ? err.response : { status: "error", err } });
-				// result.status === "error" && console.log(result.err);
+                // result.status === "error" && console.log(result.err);
                 result = result && result.data;
                 if (!!result && result.isError && (result.message.includes("정상적인 조회가 아닙니다") || result.statusCode == 252)) {
                     result = {
@@ -218,7 +219,7 @@ async function getSchool(name, birthday, region, special = false, interaction = 
             schools: s
         };
     } finally {
-        clearInterval(searchKeyInterval);
+        clearInterval(interval);
     };
 };
 
@@ -307,7 +308,7 @@ async function sendValidatePassword(token, code) { //잠시 보류
 
 global.getBirthdate = getBirthdate;
 async function getBirthdate(name, birthYear, school, interaction = null) {
-    let searchKeyInterval;
+    let interval;
     let data = [];
     try {
         if ((!name || name.length < 2 || name.length > 4 || /[^가-힣]/.test(name) || config.blockedNames.includes(name))) throw new Error("이름을 다시 확인해 주세요");
@@ -316,13 +317,14 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
         birthYear = birthYear.length <= 1 ? `0${birthYear}` : birthYear;
         if (schoolList.length < 1) throw new Error("학교를 다시 확인해 주세요");
         school = schoolList[0];
-        let searchKey = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
-        if (!searchKey) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
-        let keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
-        searchKeyInterval = setInterval(async () => {
-            let res = await axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(e => "");
-            if (!!res) searchKey = res;
-            keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
+        let searchKey = await getSearchKey();
+        let keyIndex = await getKeyIndex();
+        if (!searchKey || !keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
+        interval = setInterval(async () => {
+            let t = await getSearchKey();
+            if (t) searchKey = t;
+            t = await getKeyIndex();
+            if (t) keyIndex = t;
         }, 90000); // hcs 서치 키 만료 시간: 2분
         let description = "";
         let startedTime = Date.now();
@@ -374,17 +376,37 @@ async function getBirthdate(name, birthYear, school, interaction = null) {
     } catch (e) {
         return { success: false, message: e.message, data };
     } finally {
-        clearInterval(searchKeyInterval);
+        clearInterval(interval);
     };
+};
+
+async function findUser(name, birthday) {
+
 };
 
 function encrypt(text) {
     return crypto.publicEncrypt({ 'key': Buffer.from(publicKey, 'utf-8'), 'padding': crypto.constants.RSA_PKCS1_PADDING }, Buffer.from(text, 'utf-8')).toString('base64')
 };
 
+function getKeyIndex() {
+    return axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data).catch(() => false);
+};
+
+function getSearchKey() {
+    return axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(() => false);
+};
+
 async function exit() {
     try { !!config.onOffMessageCh && await client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 꺼짐.`); } catch { };
     process.exit(0);
+};
+
+global.sendLog = async function sendLog(interaction, payload) {
+    let ch = config.notifyChannels.log && await client.channels.fetch(config.notifyChannels.log).catch(() => false);
+    if (ch) {
+        payload.content = `\`\`\`${interaction.user.tag}(${interaction.user.id})님이 명령어를 실행하였습니다.\n명령어: /${interaction.commandName} ${interaction.options.data.map(option => `[${option.name}: ${option.value}]`).join(" ")}\n결과:\`\`\``;
+        ch.send(payload);
+    };
 };
 
 client.login(config.token);

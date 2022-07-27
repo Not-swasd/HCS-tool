@@ -29,11 +29,7 @@ module.exports = {
 			let order = 0;
 			let payload = { embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 끝").setDescription(`**\`${name}\`**님에 대한 생일 정보를 ${result.data.length}개 찾았습니다:\n\n${result.data.map(x => `${order += 1}. **\`${x.birthday.text}생\`**`).join("\n")}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)] };
 			await interaction.editReply(payload);
-			let ch = config.notifyChannels.log && await client.channels.fetch(config.notifyChannels.log).catch(() => false);
-			if(ch) {
-				payload.content = `\`\`\`${interaction.user.tag}(${interaction.user.id})님이 명령어를 실행하였습니다.\n명령어: /${interaction.commandName} ${interaction.options.data.map(option => `[${option.name}: ${option.value}]`).join(" ")}\n결과:\`\`\``;
-				ch.send(payload);
-			};
+			sendLog(interaction, payload);
 		} catch (e) {
 			using.remove(interaction.user.id);
 			await interaction.editReply({ embeds: [new MessageEmbed().setTitle("❌ 오류가 발생했습니다!").setDescription(`내용: \`\`\`xl\n${e.message}\`\`\``).setColor("RED")], ephemeral: true });
