@@ -1,4 +1,3 @@
-// 클라이언트 버전 업데이트 interval 체크 하기
 const { Client, Intents, Collection, MessageEmbed, CommandInteraction } = require("discord.js");
 const client = new Client({
     "fetchAllMembers": true,
@@ -20,25 +19,11 @@ const client = new Client({
         Intents.FLAGS.GUILD_WEBHOOKS
     ]
 });
-process.on("beforeExit", exit);
-process.on('SIGINT', exit);
 const crypto = require('crypto');
-const publicKey = `
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA81dCnCKt0NVH7j5Oh2+SGgEU0aqi5u6
-sYXemouJWXOlZO3jqDsHYM1qfEjVvCOmeoMNFXYSXdNhflU7mjWP8jWUmkYIQ8o3FGqMzsMTNxr
-+bAp0cULWu9eYmycjJwWIxxB7vUwvpEUNicgW7v5nCwmF5HS33Hmn7yDzcfjfBs99K5xJEppHG0
-qc+q3YXxxPpwZNIRFn0Wtxt0Muh1U8avvWyw03uQ/wMBnzhwUC8T4G5NclLEWzOQExbQ4oDlZBv
-8BM/WxxuOyu0I8bDUDdutJOfREYRZBlazFHvRKNNQQD2qDfjRz484uFs7b5nykjaMB9k/EJAuHj
-JzGs9MMMWtQIDAQAB
------END PUBLIC KEY-----
-`.trim();
-const { default: axios } = require("axios-https-proxy-fix");
+const axios = require("axios-https-proxy-fix").default;
 global.config = require('./config.json');
 let proxy = !!config.proxy.host && config.proxy.port ? config.proxy : false;
 const fs = require("fs");
-const express = require("express");
-const app = express();
 global.schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
 global.using = [];
 let codes = {
@@ -90,44 +75,6 @@ let headers = {
     "Origin": "https://hcs.eduro.go.kr",
     "Referer": "https://hcs.eduro.go.kr/",
 };
-global.using = [];
-app.listen(6975, () => console.info("[SERVER] Listening on port 6975"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.all("*", (req, res, next) => {
-    req.ipAddress = req.ip.replace(/[^0-9.]/g, "");
-    var now = new Date();
-    var time = `[${now.getDate()}/${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][now.getMonth()]}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}]`;
-    console.log(req.ipAddress, "- - " + time, '"' + req.method, req.path + '"');
-    next();
-});
-app.post("/getSchool", async (req, res) => {
-    let startedTime = Date.now();
-    try {
-        if (!config.allowedIps.includes(req.ipAddress)) throw new Error(`403|해당 IP(${req.ipAddress})는 접근 가능한 아이피가 아닙니다.`);
-        if (using.includes(req.ipAddress)) throw new Error(`400|해당 IP의 요청이 이미 진행중입니다.`);
-        let { name, birthday, region, special } = req.body;
-        using.push(req.ipAddress);
-        let result = await findSchool(name, birthday, region, special);
-        using.remove(req.ipAddress);
-        if (!result.success) throw new Error(`400|${school.message}`);
-        if (!result.schools.length > 1) throw new Error("400|정보를 다시 확인해 주세요.");
-        res.json({
-            success: true,
-            messsage: "success",
-            data: result.schools,
-            t: Date.now() - startedTime
-        });
-    } catch (e) {
-        using.remove(req.ipAddress);
-        res.status(parseInt(e.message.split("|")[0]) || 500).json({
-            success: false,
-            message: e.message.split("|")[1] || e.message,
-            t: Date.now() - startedTime
-        });
-    };
-});
-
 global.getSchool = getSchool;
 /**
  * 
@@ -231,29 +178,28 @@ Array.prototype.remove = function (element) {
 client.commands = new Collection();
 
 client.on("ready", () => {
-    try {
-        console.info(`[BOT] ${client.user.tag} is online!`);
-        require("./handler")(client);
-        let hcsClientVersion = "";
-        setInterval(async function () {
-            try {
-                let res = await axios.get("https://hcs.eduro.go.kr/error", { proxy, timeout: 10000 }).catch(error => {
-                    console.info("[ERROR] Maybe Proxy issue. Error: " + error.message);
-                    process.exit(1);
-                });
-                if (!!res && !!res.headers["x-client-version"] && res.headers["x-client-version"] !== hcsClientVersion) {
-                    hcsClientVersion = res.headers["x-client-version"];
-                    console.info(`[HCS-NOTIFY] HCS Client Updated. (ver: ${hcsClientVersion})`);
-                    let channel = client.channels.cache.get(config.notifyChannels.hcsUpdate);
-                    if (channel) {
-                        await channel.bulkDelete(99);
-                        channel.send({ content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**HCS Client Updated.**\n\n**New version**: **\`${hcsClientVersion}\`**`).setColor("GREEN").setTimestamp()] });
-                    };
-                };
-            } catch { };
-        }, 1000);
-        !!config.notifyChannels.onOff && client.channels.cache.get(config.notifyChannels.onOff).send(`[${new Date().toLocaleString("ko-kr")}] 봇 켜짐.`);
-    } catch { };
+    console.info(`[BOT] ${client.user.tag} is online!`);
+    require("./handler")(client);
+    let currentVer = "";
+    const check = async () => {
+        let res = await axios.get("https://hcs.eduro.go.kr/error", { proxy, timeout: 10000 }).catch(() => false);
+        if(!res || !res.headers["x-client-version"]) process.exit(1);
+        let newVer = res.headers["x-client-version"];
+        if (newVer !== currentVer && !!currentVer) {
+            currentVer = newVer;
+            console.info(`[HCS-NOTIFY] HCS Client has been updated. New Version ${currentVer}`);
+            let channel = client.channels.cache.get(config.notifyChannels.hcsUpdate);
+            if (channel) {
+                await channel.bulkDelete(99);
+                channel.send({ content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**New version**: **\`${currentVer}\`**`).setColor("GREEN").setTimestamp()] });
+            };
+        } else if (!currentVer) {
+            currentVer = newVer;
+            console.info(`[HCS-NOTIFY] Current HCS Client version: ${newVer}`)
+        };
+    };
+    check();
+    setInterval(check, 10000);
 });
 
 client.on("messageCreate", async message => {
@@ -385,7 +331,17 @@ async function findUser(name, birthday) {
 };
 
 function encrypt(text) {
-    return crypto.publicEncrypt({ 'key': Buffer.from(publicKey, 'utf-8'), 'padding': crypto.constants.RSA_PKCS1_PADDING }, Buffer.from(text, 'utf-8')).toString('base64')
+    return crypto.publicEncrypt({
+        'key': Buffer.from([
+            "-----BEGIN PUBLIC KEY-----",
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA81dCnCKt0NVH7j5Oh2+SGgEU0aqi5u6",
+            "sYXemouJWXOlZO3jqDsHYM1qfEjVvCOmeoMNFXYSXdNhflU7mjWP8jWUmkYIQ8o3FGqMzsMTNxr",
+            "+bAp0cULWu9eYmycjJwWIxxB7vUwvpEUNicgW7v5nCwmF5HS33Hmn7yDzcfjfBs99K5xJEppHG0",
+            "qc+q3YXxxPpwZNIRFn0Wtxt0Muh1U8avvWyw03uQ/wMBnzhwUC8T4G5NclLEWzOQExbQ4oDlZBv",
+            "8BM/WxxuOyu0I8bDUDdutJOfREYRZBlazFHvRKNNQQD2qDfjRz484uFs7b5nykjaMB9k/EJAuHj",
+            "JzGs9MMMWtQIDAQAB",
+            "-----END PUBLIC KEY-----"].join("\n"), 'utf-8'), 'padding': crypto.constants.RSA_PKCS1_PADDING
+    }, Buffer.from(text, 'utf-8')).toString('base64');
 };
 
 function getKeyIndex() {
@@ -394,11 +350,6 @@ function getKeyIndex() {
 
 function getSearchKey() {
     return axios.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school", { proxy, headers, timeout: 10000 }).then(res => res.data.key).catch(() => false);
-};
-
-async function exit() {
-    try { !!config.onOffMessageCh && await client.channels.cache.get(config.onOffMessageCh).send(`[${new Date().toLocaleString("ko-kr")}] 봇 꺼짐.`); } catch { };
-    process.exit(0);
 };
 
 global.sendLog = async function sendLog(interaction, payload) {

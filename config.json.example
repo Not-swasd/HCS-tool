@@ -9,6 +9,9 @@
     "blockedNames": [
         "사용할 수 없는 이름"
     ],
+    "notifyChannels": {
+        "hcsUpdate": "자가진단 클라이언트 업데이트 메세지 채널ID" //false로 설정하면 메세지 안보냄
+    }
     "proxy": {
         "auth": {
             "username": "",
@@ -18,8 +21,4 @@
         "protocol": "http",
         "port": 0
     }, //프록시를 사용하지 않으신다면 이대로 두면 됩니다
-    "notifyChannels": {
-        "onOff": "봇 켜짐/꺼짐 메세지 채널ID", //false로 설정하면 메세지 안보냄
-        "hcsUpdate": "자가진단 클라이언트 업데이트 메세지 채널ID" //false로 설정하면 메세지 안보냄
-    }
 }
