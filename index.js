@@ -23,8 +23,7 @@ const crypto = require('crypto');
 const axios = require("axios-https-proxy-fix").default;
 global.config = require('./config.json');
 let proxy = !!config.proxy.host && config.proxy.port ? config.proxy : false;
-const fs = require("fs");
-global.schools = JSON.parse(fs.readFileSync("./schools.json", "utf8"));
+global.schools = require("./schools.json");
 global.using = [];
 let codes = {
     "서울특별시": "sen",
