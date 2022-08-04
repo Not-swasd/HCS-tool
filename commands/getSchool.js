@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { CommandInteraction, Client, MessageEmbed } = require('discord.js');
+const HCS = require('../hcs.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -33,26 +34,30 @@ module.exports = {
 	 * @param {Client} client 
 	 */
 	async execute(interaction, client) {
-		try {
-			if (using.includes(interaction.user.id) && !config.owners.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED")], ephemeral: true });
-			let region = interaction.options.getString("지역");
-			let name = interaction.options.getString("이름");
-			let birthday = interaction.options.getString("생년월일");
-			let special = interaction.options.getBoolean("특수학교여부");
-			await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (약 1분 소요)").setColor("BLUE")], ephemeral: true });
-			let startedTime = Date.now();
-			using.push(interaction.user.id);
-			let school = await getSchool(name, birthday, region, special, interaction);
-			using.remove(interaction.user.id);
-			if (!school.success) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ ${school.message}`).setColor("RED")], ephemeral: true });
-			if (school.schools.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요! (소요된 시간: ${(Date.now() - startedTime) / 1000}초)`).setColor("RED")], ephemeral: true });
-			let order = 0;
-			let payload = { embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}\`**님의 정보를 ${school.schools.length}개 찾았습니다:\n\n${school.schools.map(x => `${order += 1}. **\`${x.region} ${x.orgName}\`**`).join("\n")}\n\n총 소요된 시간: ${(((Date.now() - startedTime) / 1000) + 1).toFixed(3)}초`)] };
+		if (using.includes(interaction.user.id) && !config.owners.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
+		let region = interaction.options.getString("지역");
+		let name = interaction.options.getString("이름");
+		let birthday = interaction.options.getString("생년월일");
+		let special = interaction.options.getBoolean("특수학교여부");
+		await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (약 1분 소요)").setColor("BLUE").setFooter({ "text": "Made by swasd." })], ephemeral: true });
+		let startedTime = Date.now();
+		let hcs = new HCS(proxy);
+		using.push(interaction.user.id);
+		hcs.on("data", async (found, current, pages) => {
+			if (found.length >= 1) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 성공 (페이지 ${current}/${pages})`).setDescription(found.map(res => `**\`${res.region} ${res.orgName}\`**에서 **\`${name}\`**님의 정보를 찾았습니다! (소요된 시간: 약 ${((res.foundAt - startedTime) / 1000).toFixed(1)}초)`).join("\n")).setFooter({ "text": `약 ${((Date.now() - startedTime) / 1000).toFixed(0)}초 경과 됨 | Made by swasd.` })] });
+			else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${current}/${pages})`).setFooter({ "text": `Made by swasd. 약 ${((Date.now() - startedTime) / 1000).toFixed(0)}초 경과 됨.` })] });
+		});
+		hcs.on("end", async (found) => {
+			if (found.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요!`).setColor("RED").setFooter({ "text": `총 소요된 시간: 약 ${(((Date.now() - startedTime) / 1000) + 1).toFixed(1)}초 | Made by swasd.` })], ephemeral: true });
+			let payload = { embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}(Bday: ${birthday})\`**님에 대한 학교정보를 ${found.length}개 찾았습니다:\n\n${found.map(x => `• **\`${x.region} ${x.orgName}\`**`).join("\n")}\n`).setFooter({ "text": `총 소요된 시간: 약 ${(((Date.now() - startedTime) / 1000) + 1).toFixed(1)}초 | Made by swasd.` })] };
 			await interaction.editReply(payload);
-			sendLog(interaction, payload);
-		} catch (e) {
 			using.remove(interaction.user.id);
-			await interaction.editReply({ embeds: [new MessageEmbed().setTitle("❌ 오류가 발생했습니다!").setDescription(`내용: \`\`\`xl\n${e.message}\`\`\``).setColor("RED")], ephemeral: true });
-		}
+			sendLog(interaction, payload);
+		});
+		hcs.on("error", (error, found) => {
+			using.remove(interaction.user.id);
+			interaction[interaction.replied ? "editReply" : "reply"]({ embeds: [new MessageEmbed().setTitle("❌ 오류가 발생했습니다!").setDescription(`내용: \`\`\`xl\n${error.message}\`\`\``).setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
+		});
+		hcs.getSchool(name, birthday, region, special, interaction);
 	},
 };
