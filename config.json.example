@@ -9,7 +9,7 @@
     "notifyChannels": {
         "hcsUpdate": "자가진단 클라이언트 업데이트 메세지 채널ID", //false로 설정하면 메세지 안보냄
         "log": "누군가 명령어를 사용하면 이 채널로 메세지가 감" //false로 설정하면 메세지 안보냄
-    }
+    },
     "proxy": {
         "auth": {
             "username": "",
