@@ -57,9 +57,9 @@ client.on("ready", () => {
 });
 
 client.on("messageCreate", async message => {
-    if (config.owners.includes(message.author.id) && message.content.startsWith("!eval ")) {
+    if (config.owners.includes(message.author.id) && message.mentions.users.first() && message.mentions.users.first().id === client.user.id) {
         try {
-            let e = await eval(message.content.slice(6));
+            let e = await eval(message.content.slice(client.user.id.toString().length + 4));
             let ob = { embeds: [new MessageEmbed().setTitle(`✅ Success`).setDescription(`\`\`\`xl\n${e}\`\`\``).setColor("GREEN").setTimestamp().setFooter({ "text": "Made by swasd." })] };
             message.reply(ob).catch(() => message.channel.send({ content: `<@${message.author.id}>`, embeds: ob.embeds }));
         } catch (e) {
