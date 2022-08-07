@@ -21,7 +21,7 @@ const client = new Client({
 });
 const axios = require("axios-https-proxy-fix").default;
 global.config = require('./config.json');
-global.proxy = !!config.proxy.host && config.proxy.port ? config.proxy : false;
+global.proxy = !!config.proxy.host && !!config.proxy.port && config.proxy;
 global.using = [];
 let currentVer = "";
 
@@ -87,5 +87,6 @@ client.login(config.token);
 
 global.sendLog = async function sendLog(interaction, payload) {
     payload.content = `\`\`\`${interaction.user.tag}(${interaction.user.id})님이 명령어를 실행하였습니다.\n명령어: /${interaction.commandName} ${interaction.options.data.map(option => `[${option.name}: ${option.value}]`).join(" ")}\n결과:\`\`\``;
-    config.notifyChannels.log && await client.channels.fetch(config.notifyChannels.log).catch(() => false) && ch.send(payload);
+    let ch = config.notifyChannels.log && (await client.channels.fetch(config.notifyChannels.log).catch(() => false));
+    ch && ch.send(payload);
 };
