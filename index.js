@@ -31,17 +31,24 @@ Array.prototype.remove = function (element) {
 };
 
 client.commands = new Collection();
+var available = false;
 
 client.on("ready", () => {
     console.info(`[BOT] ${client.user.tag} is online!`);
     require("./handler")(client);
     const check = async () => {
         let res = await axios.get("https://hcs.eduro.go.kr/error", { proxy, timeout: 10000 }).catch(() => false);
-        if (!res || !res.headers["x-client-version"]) process.exit(1);
+        if (!res || !res.headers["x-client-version"]) {
+            console.info("[HCS-NOTIFICATION] failed to get hcs client version");
+            available = false;
+            return;
+        } else {
+            available = true;
+        };
         let newVer = res.headers["x-client-version"];
         if (newVer !== currentVer && !!currentVer) {
             currentVer = newVer;
-            console.info(`[HCS-NOTIFY] HCS Client has been updated. New Version ${currentVer}`);
+            console.info(`[HCS-NOTIFICATION] HCS Client has been updated. New Version ${currentVer}`);
             let channel = client.channels.cache.get(config.notifyChannels.hcsUpdate);
             if (channel) {
                 await channel.bulkDelete(99);
@@ -71,6 +78,7 @@ client.on("messageCreate", async message => {
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
+    if (!available) return interaction.reply("자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
     const command = client.commands.get(interaction.commandName);
     if (!command) return interaction.reply({ content: `Command \`${interaction.commandName}\` not found.`, ephemeral: true });
     try {
