@@ -78,9 +78,9 @@ client.on("messageCreate", async message => {
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
-    if (!available) return interaction.reply("자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
+    if (!available) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
     const command = client.commands.get(interaction.commandName);
-    if (!command) return interaction.reply({ content: `Command \`${interaction.commandName}\` not found.`, ephemeral: true });
+    if (!command) return interaction.reply({ embeds: [new MessageEmbed().setTitle(`❌ Command \`${interaction.commandName}\` not found.`).setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
     try {
         if (typeof config.allowedUsers === "object" && !config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
         await command.execute(interaction, client);
