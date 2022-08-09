@@ -1,6 +1,6 @@
 # HCS-tool
 [![Language](https://img.shields.io/badge/Language-Node.js-brightgreen?logo=node.js&style=flat-square)](https://nodejs.org/ko)<br>
-2022년 3월 9일에 만들어지고 2022년 8월 4일(마지막 커밋 시점)까지 계속 작동중입니다. (149일간)<br>
+2022년 8월 9일(마지막 커밋 시점) 작동중입니다.<br>
 
 ## 📌필독 사항
  * 학습 목적으로만 사용해주세요.
