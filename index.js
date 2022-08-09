@@ -24,7 +24,6 @@ global.config = require('./config.json');
 global.proxy = !!config.proxy.host && !!config.proxy.port && config.proxy;
 global.using = [];
 let currentVer = "";
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 Array.prototype.remove = function (element) {
     var index = this.indexOf(element);
@@ -83,8 +82,6 @@ client.on('interactionCreate', async interaction => {
         if (typeof config.allowedUsers === "object" && !config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
         const command = client.commands.get(interaction.commandName);
         if (!command) return interaction.reply({ embeds: [new MessageEmbed().setTitle(`❌ Command \`${interaction.commandName}\` not found.`).setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
-        console.log(interaction.commandName)
-        console.log(interaction.commandName === "getschool")
         if (interaction.commandName === "getschool" || interaction.commandName === "getbirthday") {
             if (using.includes(interaction.user.id) && !config.owners.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
             if (!available) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
