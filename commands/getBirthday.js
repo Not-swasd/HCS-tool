@@ -28,10 +28,10 @@ module.exports = {
 			else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${current}/${pages})`).setFooter({ "text": footerText })] });
 		});
 		hcs.on("end", async (found) => {
+			using.remove(interaction.user.id);
 			if (found.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요!`).setColor("RED").setFooter({ "text": `총 소요된 시간: 약 ${(((Date.now() - startedTime) / 1000) + 1).toFixed(1)}초 | Made by swasd.` })], ephemeral: true });
 			let payload = { embeds: [new MessageEmbed().setColor("GREEN").setTitle("✅ 트래킹 끝").setDescription(`**\`${name}(Sch: ${HCS.findSchool(school)[0].name})\`**님에 대한 생일 정보를 ${found.length}개 찾았습니다:\n\n${found.map(x => `• **\`${x.birthday.text}\`**`).join("\n")}\n`).setFooter({ "text": `총 소요된 시간: 약 ${(((Date.now() - startedTime) / 1000) + 1).toFixed(1)}초 | Made by swasd.` })] };
 			await interaction.editReply(payload);
-			using.remove(interaction.user.id);
 			sendLog(interaction, payload);
 		});
 		hcs.on("error", (error, found) => {
