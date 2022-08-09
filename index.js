@@ -85,6 +85,10 @@ client.on('interactionCreate', async interaction => {
         if (interaction.commandName === "getschool" || interaction.commandName === "getbirthday") {
             if (using.includes(interaction.user.id) && !config.owners.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
             if (!available) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
+            if(typeof config.disallowedNames === "object" && !!interaction.options.getString("이름")) for (const disallowed of config.disallowedNames) if(disallowed.includes(interaction.options.getString("이름"))) {
+                await interaction[interaction.replied ? "editReply" : "reply"]({ embeds: [new MessageEmbed().setTitle(`❌ 해당 이름은 허용되지 않습니다.`).setColor("RED").setFooter({ "text": `Made by swasd.` })], ephemeral: true });
+                return;
+            };
             await interaction.reply({ embeds: [new MessageEmbed().setTitle(`ℹ️ 현재 사용자는 ${using.length}명입니다. (사용자가 많을수록 느립니다)`).setColor("YELLOW").setFooter({ "text": "Made by swasd." })], ephemeral: true });
             await sleep(2000);
         };
