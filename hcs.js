@@ -2,6 +2,7 @@ const schools = require('./schools.json');
 const { EventEmitter } = require('events');
 const axios = require('axios-https-proxy-fix').default;
 const crypto = require('crypto');
+const axiosRetry = require('axios-retry');
 const codes = {
     "서울특별시": "sen",
     "부산광역시": "pen",
@@ -58,6 +59,10 @@ module.exports = class HCSTool extends EventEmitter {
                 "Referer": "https://hcs.eduro.go.kr/",
             },
             timeout: 10000
+        });
+        axiosRetry(this.client, {
+            retries: 2,
+            retryDelay: (retryCount) => retryCount * 1000
         });
         this.keyIndex = "";
         this.searchKey = "";
