@@ -117,7 +117,7 @@ module.exports = class HCSTool extends EventEmitter {
                         else return false;
                     });
                     result && (result = result.data);
-                    if (!!result && result.isError && (result.message.includes("정상적인 조회가 아닙니다") || result.statusCode == 252)) {
+                    if (!!result && result.isError && result.errorCode !== 1001 && result.message.includes("정상적인 조회가 아닙니다")) {
                         result = {
                             orgName: school.name,
                             orgCode: school.code,
@@ -194,7 +194,7 @@ module.exports = class HCSTool extends EventEmitter {
                         else return false;
                     });
                     result = result && result.data;
-                    if (!!result && result.isError && (result.message.includes("정상적인 조회가 아닙니다") || result.statusCode == 252)) {
+                    if (!!result && result.isError && result.errorCode !== 1001 && result.message.includes("정상적인 조회가 아닙니다")) {
                         result = {
                             orgName: school.name,
                             orgCode: school.code,

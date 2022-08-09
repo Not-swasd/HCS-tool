@@ -24,6 +24,7 @@ global.config = require('./config.json');
 global.proxy = !!config.proxy.host && !!config.proxy.port && config.proxy;
 global.using = [];
 let currentVer = "";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 Array.prototype.remove = function (element) {
     var index = this.indexOf(element);
@@ -77,12 +78,19 @@ client.on("messageCreate", async message => {
 });
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
-    if (!available) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return interaction.reply({ embeds: [new MessageEmbed().setTitle(`❌ Command \`${interaction.commandName}\` not found.`).setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
     try {
+        if (!interaction.isCommand()) return;
         if (typeof config.allowedUsers === "object" && !config.owners.includes(interaction.user.id) && !config.allowedUsers.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ Missing Permission").setDescription("You don't have permission to use this command.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
+        const command = client.commands.get(interaction.commandName);
+        if (!command) return interaction.reply({ embeds: [new MessageEmbed().setTitle(`❌ Command \`${interaction.commandName}\` not found.`).setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
+        console.log(interaction.commandName)
+        console.log(interaction.commandName === "getschool")
+        if (interaction.commandName === "getschool" || interaction.commandName === "getbirthday") {
+            if (using.includes(interaction.user.id) && !config.owners.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
+            if (!available) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true }).catch(() => false);
+            await interaction.reply({ embeds: [new MessageEmbed().setTitle(`ℹ️ 현재 사용자는 ${using.length}명입니다. (사용자가 많을수록 느립니다)`).setColor("YELLOW").setFooter({ "text": "Made by swasd." })], ephemeral: true });
+            await sleep(2000);
+        };
         await command.execute(interaction, client);
     } catch (error) {
         console.error(error);
@@ -97,4 +105,8 @@ global.sendLog = async function sendLog(interaction, payload) {
     payload.content = `\`\`\`${interaction.user.tag}(${interaction.user.id})님이 명령어를 실행하였습니다.\n명령어: /${interaction.commandName} ${interaction.options.data.map(option => `[${option.name}: ${option.value}]`).join(" ")}\n결과:\`\`\``;
     let ch = config.notifyChannels.log && (await client.channels.fetch(config.notifyChannels.log).catch(() => false));
     ch && ch.send(payload);
+};
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 };

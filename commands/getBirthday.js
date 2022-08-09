@@ -15,17 +15,17 @@ module.exports = {
 	 * @param {Client} client 
 	 */
 	async execute(interaction, client) {
-		if (using.includes(interaction.user.id) && !config.owners.includes(interaction.user.id)) return interaction.reply({ embeds: [new MessageEmbed().setTitle("❌ 해당 계정으로 요청이 이미 진행중입니다.").setColor("RED").setFooter({ "text": "Made by swasd." })], ephemeral: true });
 		const name = interaction.options.getString("이름");
 		const birthYear = interaction.options.getString("출생연도");
 		const school = interaction.options.getString("학교");
-		await interaction.reply({ embeds: [new MessageEmbed().setTitle("🔍 검색 중... (약 1분 소요)").setColor("BLUE").setFooter({ "text": "Made by swasd." })], ephemeral: true });
+		await interaction[interaction.replied ? "editReply" : "reply"]({ embeds: [new MessageEmbed().setTitle("🔍 검색 중...").setColor("BLUE").setFooter({ "text": "Made by swasd." })], ephemeral: true });
 		let startedTime = Date.now();
 		let hcs = new HCS(proxy);
 		using.push(interaction.user.id);
 		hcs.on("data", async (found, current, pages) => {
-			if (found.length >= 1) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 성공 (페이지 ${current}/${pages})`).setDescription(found.map(res => `**\`${res.birthday.text}\`** (소요된 시간: 약 ${((res.foundAt - startedTime) / 1000).toFixed(1)}초)`).join("\n")).setFooter({ "text": `약 ${((Date.now() - startedTime) / 1000).toFixed(0)}초 경과 됨 | Made by swasd.` })] });
-			else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${current}/${pages})`).setFooter({ "text": `Made by swasd. 약 ${((Date.now() - startedTime) / 1000).toFixed(0)}초 경과 됨.` })] });
+			const footerText = `약 ${((Date.now() - startedTime) / 1000).toFixed(0)}초 경과 됨 | 현재 사용자: ${using.length}명 | Made by swasd.`;
+			if (found.length >= 1) interaction.editReply({ embeds: [new MessageEmbed().setColor("GREEN").setTitle(`✅ 성공 (페이지 ${current}/${pages})`).setDescription(found.map(res => `**\`${res.birthday.text}\`** (소요된 시간: 약 ${((res.foundAt - startedTime) / 1000).toFixed(1)}초)`).join("\n")).setFooter({ "text": footerText })] });
+			else interaction.editReply({ embeds: [new MessageEmbed().setColor("BLUE").setTitle(`🔍 검색 중... (페이지 ${current}/${pages})`).setFooter({ "text": footerText })] });
 		});
 		hcs.on("end", async (found) => {
 			if (found.length < 1) return interaction.editReply({ embeds: [new MessageEmbed().setTitle(`❌ 정보를 다시 확인해 주세요!`).setColor("RED").setFooter({ "text": `총 소요된 시간: 약 ${(((Date.now() - startedTime) / 1000) + 1).toFixed(1)}초 | Made by swasd.` })], ephemeral: true });
