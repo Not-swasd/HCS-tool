@@ -522,8 +522,8 @@ function rotl(x, n) {
  * @returns 
  */
 export default async function encrypt(password, proxy) {
-    const client = axios.create({
-        proxy,
+    var options = {
+        proxy: typeof proxy === "object" ? proxy : false,
         headers: {
             Accept: `*/*`,
             'Accept-Encoding': `gzip, deflate, br`,
@@ -536,27 +536,27 @@ export default async function encrypt(password, proxy) {
             'Sec-Fetch-Dest': `script`,
             'Sec-Fetch-Mode': `no-cors`,
             'Sec-Fetch-Site': `same-origin`,
-            'User-Agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.87 Whale/3.16.138.22 Safari/537.36`,
+            'User-Agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.87 Whale/3.16.138.22 Safari/537.36`
         },
-        timeout: 10000,
-    });
-    var initTime = await client.get('https://hcs.eduro.go.kr/transkeyServlet?op=getInitTime').then((res) => res.data.match(/(?<=var initTime=')(.*?)(?=';)/)[0]).catch(() => '');
+        timeout: 10000
+    };
+    var initTime = await axios.get('https://hcs.eduro.go.kr/transkeyServlet?op=getInitTime', options).then((res) => res.data.match(/(?<=var initTime=')(.*?)(?=';)/)[0]).catch(() => '');
     var genSessionKey = crypto.randomBytes(8).toString('hex');
     var sessionKey = genSessionKey.split('').map((char) => Number('0x0' + char));
     var encSessionKey = encryptP(genSessionKey);
-    var keyIndex = await client.post('https://hcs.eduro.go.kr/transkeyServlet', new URLSearchParams({
+    var keyIndex = await axios.post('https://hcs.eduro.go.kr/transkeyServlet', new URLSearchParams({
         op: 'getKeyIndex',
         name: 'password',
         keyboardType: 'number',
         initTime: initTime
-    })).then((res) => res.data).catch(() => '');
-    var dummy = await client.post('https://hcs.eduro.go.kr/transkeyServlet', new URLSearchParams({
+    }), options).then((res) => res.data).catch(() => '');
+    var dummy = await axios.post('https://hcs.eduro.go.kr/transkeyServlet', new URLSearchParams({
         op: 'getDummy',
         keyboardType: 'number',
         fieldType: 'password',
         keyIndex: keyIndex,
         talkBack: true,
-    })).then((res) => res.data).catch(() => '');
+    }), options).then((res) => res.data).catch(() => '');
     let enc = password.split('').map((n) => {
         const [x, y] = keysXY[dummy.split(',').indexOf(n)]
         return delimiter + SeedEnc(`${x} ${y}`, initTime, sessionKey)
