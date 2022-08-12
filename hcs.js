@@ -87,10 +87,8 @@ export default class HCSTool extends EventEmitter {
     async getSchool(name, birthday, region = "", special = false) {
         let found = [];
         try {
-            if ((!name || name.length < 2 || name.length > 4 || /[^가-힣]/.test(name))) throw new Error("이름을 다시 확인해 주세요.");
-            if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
-            birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
-            if (Number(birthday[0]) < 4 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
+            if (!HCSTool.checkName(name)) throw new Error("이름을 다시 확인해 주세요.");
+            if (!HCSTool.checkBirthday(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
             await this.setData();
             if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
             this.setKeyInterval();
@@ -126,7 +124,7 @@ export default class HCSTool extends EventEmitter {
     async getBirthday(name, birthYear, school) {
         let found = [];
         try {
-            if ((!name || name.length < 2 || name.length > 4 || /[^가-힣]/.test(name))) throw new Error("이름을 다시 확인해 주세요");
+            if (!HCSTool.checkName(name)) throw new Error("이름을 다시 확인해 주세요.");
             if (Number(birthYear) < 4 || Number(birthYear) > 15) throw new Error("출생연도를 다시 확인해 주세요");
             birthYear.length <= 1 && (birthYear = `0${birthYear}`);
             school = HCSTool.findSchool(school)[0];
@@ -179,7 +177,7 @@ export default class HCSTool extends EventEmitter {
             var data = {};
             if (password) {
                 data = await this.client.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${lctnScCode[school.region]}&schulCrseScCode=${schulCrseScCode[school.level]}&orgName=${encodeURIComponent(school.name)}&loginType=school`).then(res => res.data).catch(() => false);
-                if(data.schulList.length < 1) throw new Error("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+                if (data.schulList.length < 1) throw new Error("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
                 // _school = data.schulList.find(s => s.kraOrgNm === school.name) || {};
             };
             var res = await this.client.post(`https://${code[school.region]}hcs.eduro.go.kr/v3/findUser`, {
@@ -252,5 +250,17 @@ export default class HCSTool extends EventEmitter {
                 "JzGs9MMMWtQIDAQAB",
                 "-----END PUBLIC KEY-----"].join("\n"), 'utf-8'), 'padding': crypto.constants.RSA_PKCS1_PADDING
         }, Buffer.from(text, 'utf-8')).toString('base64');
+    };
+
+    static checkName(name) {
+        if ((!name || name.length < 2 || name.length > 4 || /[^가-힣]/.test(name))) return false;
+        else return true;
+    };
+
+    static checkBirthday(birthday) {
+        if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) return false;
+        var arr = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
+        if (Number(arr[0]) < 4 || Number(arr[0]) > 15) return false;
+        return true;
     };
 };
