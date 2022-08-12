@@ -1,4 +1,4 @@
-import{ Client, Intents, Collection, MessageEmbed, CommandInteraction } from "discord.js";
+import { Client, Intents, Collection, MessageEmbed, CommandInteraction } from "discord.js";
 import axios from "axios";
 import config from "./config.json" assert { type: "json" };
 import handler from "./handler.js";
