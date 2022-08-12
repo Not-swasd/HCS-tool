@@ -7,7 +7,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
         return all
     }, []);
     const fs = require('fs');
-    const axios = require('axios-https-proxy-fix').default;
+    const axios = require('axios').default;
     const axiosRetry = require('axios-retry');
     axiosRetry(axios, {
         retries: 2,
