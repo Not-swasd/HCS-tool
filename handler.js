@@ -1,8 +1,12 @@
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
-const fs = require('node:fs');
+import { Client } from "discord.js";
+import { REST } from "@discordjs/rest";
+import { Routes } from "discord-api-types/v9";
+import fs from "fs";
 
-module.exports = async (client) => {
+/**
+ * @param {Client} client
+ */
+export default async function (client) {
     try {
         console.log('[BOT] Started refreshing application (/) commands.');
 
@@ -10,7 +14,7 @@ module.exports = async (client) => {
         const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
         for (const file of commandFiles) {
-            const command = require(`./commands/${file}`);
+            const command = (await import(`./commands/${file}`)).default;
             commands.push(command.data.toJSON());
             client.commands.set(command.data.name, command);
         };
