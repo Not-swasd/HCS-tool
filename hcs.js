@@ -127,8 +127,6 @@ export default class HCSTool extends EventEmitter {
             if (!HCSTool.checkName(name)) throw new Error("이름을 확인해 주세요.");
             if (Number(birthYear) < 4 || Number(birthYear) > 15) throw new Error("출생연도를 확인해 주세요");
             birthYear.length <= 1 && (birthYear = `0${birthYear}`);
-            school = HCSTool.findSchool(school)[0];
-            if (!school) throw new Error("학교를 확인해 주세요");
             await this.setData();
             if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
             this.setKeyInterval();
