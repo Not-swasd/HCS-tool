@@ -81,6 +81,7 @@ export default class HCSTool extends EventEmitter {
         this.keyIndex = "";
         this.searchKey = "";
         this.interval;
+        this.token = "";
         this.mI = eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8"));
     };
 
@@ -88,11 +89,12 @@ export default class HCSTool extends EventEmitter {
         let found = [];
         try {
             if (!HCSTool.checkName(name)) throw new Error("이름을 확인해 주세요.");
-            if (!HCSTool.checkBirthday(birthday)) throw new Error("생년월일을 확인해 주세요.");
+            var level = HCSTool.checkBirthday(birthday);
+            if (!level) throw new Error("생년월일을 확인해 주세요.");
             await this.setData();
             if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
             this.setKeyInterval();
-            let schoolList = schools.filter(x => x.level == (special ? "특수학교" : Number(birthday[0]) <= 15 && Number(birthday[0]) >= 10 ? "초등학교" : Number(birthday[0]) <= 9 && Number(birthday[0]) >= 7 ? "중학교" : "고등학교"))
+            let schoolList = schools.filter(x => x.level == (special ? "특수학교" : level))
             schoolList = !!region ? schoolList.filter(x => x.region == region) : schoolList;
             schoolList = schoolList.reduce((all, one, i) => {
                 const tArr = ["s", "s", "d", "a", "w", "x", "w", "h", "c", "s"];
@@ -105,7 +107,7 @@ export default class HCSTool extends EventEmitter {
                 currentPage++;
                 this.emit("data", found, currentPage, schoolList.length);
                 await Promise.all(chunk.map(async (school) => {
-                    let result = await this.findUser(name, birthday.join(""), school);
+                    let result = await this.findUser(name, birthday, school);
                     if (!!result) {
                         found.push(result);
                         this.emit("data", found, currentPage, schoolList.length);
@@ -194,6 +196,7 @@ export default class HCSTool extends EventEmitter {
             var result = !!res && res.data;
             if (!!result && (!!result.token || (result.isError && result.errorCode !== 1001 && result.message.includes("정상적인 조회가 아닙니다")))) {
                 birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)].map(x => Number(x));
+                if (result.token) this.setToken(result.token);
                 return Object.assign({
                     school,
                     userBday: {
@@ -225,6 +228,22 @@ export default class HCSTool extends EventEmitter {
                 "ExE2E": "false"
             }]
         });
+    };
+    
+    /**
+     * @param {string} 
+     */
+    async registerServey() {
+        this.client.post(``)
+    };
+
+    /**
+     * 
+     * @param {string} token 
+     */
+    setToken(token) {
+        this.client.defaults.headers.common["Authorization"] = `Bearer ${result.token}`;
+        this.token = result.token;
     };
 
     /**
@@ -259,6 +278,6 @@ export default class HCSTool extends EventEmitter {
         if (!birthday || birthday.length !== 6 || /[^0-9]/.test(birthday)) return false;
         var arr = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)];
         if (Number(arr[0]) < 4 || Number(arr[0]) > 15) return false;
-        return true;
+        return Number(arr[0]) <= 15 && Number(arr[0]) >= 10 ? "초등학교" : Number(arr[0]) <= 9 && Number(arr[0]) >= 7 ? "중학교" : "고등학교";
     };
 };
