@@ -20,7 +20,7 @@ export default {
 		const school = interaction.options.getString("학교");
 		var schools = HCS.findSchool(school);
 		if(schools.length < 1) throw new Error("학교를 확인해주세요.");
-		if(schools.length > 1) throw new Error("학교 검색 결과가 너무 많습니다. 정확한 학교명을 입력해주세요. (ex: 경기도 안녕초등학교)");
+		if(schools.length > 1) throw new Error("학교 검색 결과가 너무 많습니다. 정확한 학교명을 입력해주세요. (e.g: 경기도 안녕초등학교)");
 		await interaction[interaction.replied ? "editReply" : "reply"]({ embeds: [new MessageEmbed().setTitle("🔍 검색 중...").setColor("BLUE").setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })], ephemeral: true });
 		let startedTime = Date.now();
 		let hcs = new HCS(proxy);
