@@ -548,13 +548,13 @@ export default async function encrypt(password, proxy) {
         op: 'getKeyIndex',
         name: 'password',
         keyboardType: 'number',
-        initTime: initTime
+        initTime
     }), options).then((res) => res.data).catch(() => '');
     var dummy = await axios.post('https://hcs.eduro.go.kr/transkeyServlet', new URLSearchParams({
         op: 'getDummy',
         keyboardType: 'number',
         fieldType: 'password',
-        keyIndex: keyIndex,
+        keyIndex,
         talkBack: true,
     }), options).then((res) => res.data).catch(() => '');
     let enc = password.split('').map((n) => {
