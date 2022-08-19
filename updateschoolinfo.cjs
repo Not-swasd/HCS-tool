@@ -2,7 +2,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 (async () => {
     let schools1 = require('./schools.json').reduce((all, one, i) => {
-        const ch = Math.floor(i / 150);
+        const ch = Math.floor(i / 200);
         all[ch] = [].concat((all[ch] || []), one);
         return all
     }, []);
@@ -48,8 +48,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
             else {
                 school.name = iconv.decode(res.data, 'euc-kr').split("<title>")[1].split(" 학교정보</title>")[0];
                 done.push(school);
-            }
+            };
         }));
+        done = done.sort((a, b) => a.name.localeCompare(b.name));
         fs.writeFileSync("./done.json", JSON.stringify(done, null, 4));
         fs.writeFileSync("./failed.json", JSON.stringify(failed, null, 4));
     };
