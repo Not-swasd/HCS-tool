@@ -50,19 +50,23 @@ client.on("ready", () => {
         };
         let newVer = res.headers["x-client-version"];
         let channel = config.notifyChannels.hcsUpdate && client.channels.cache.get(config.notifyChannels.hcsUpdate);
+        var user = config.owners[0] && client.users.cache.get(config.owners[0]);
         if (newVer !== currentVer && !!currentVer) {
             console.info(`[HCS-NOTIFICATION] HCS Client has been updated. New Version ${newVer}`);
+            var options = { content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**Old**: **\`${currentVer}\`**\n**New**: **\`${newVer}\`**`).setColor("GREEN").setTimestamp().setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })] };
             if (channel) {
                 await channel.bulkDelete(99);
-                channel.send({ content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**Old**: **\`${currentVer}\`**\n**New**: **\`${newVer}\`**`).setColor("GREEN").setTimestamp().setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })] });
+                channel.send(options);
             };
+            user && user.send(options);
             currentVer = newVer;
         } else if (!currentVer) {
             currentVer = newVer;
             console.info(`[HCS-NOTIFY] Current HCS Client version: ${newVer}`);
+            var options = { embeds: [new MessageEmbed().setTitle("HCS Notification").setDescription(`**Current**: **\`${currentVer}\`**`).setColor("GREEN").setTimestamp().setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })] };
             if (channel) {
                 await channel.bulkDelete(99);
-                channel.send({ embeds: [new MessageEmbed().setTitle("HCS Notification").setDescription(`**Current**: **\`${currentVer}\`**`).setColor("GREEN").setTimestamp().setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })] });
+                channel.send(options);
             };
         };
     };
