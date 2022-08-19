@@ -49,17 +49,21 @@ client.on("ready", () => {
             available = true;
         };
         let newVer = res.headers["x-client-version"];
+        let channel = config.notifyChannels.hcsUpdate && client.channels.cache.get(config.notifyChannels.hcsUpdate);
         if (newVer !== currentVer && !!currentVer) {
-            currentVer = newVer;
-            console.info(`[HCS-NOTIFICATION] HCS Client has been updated. New Version ${currentVer}`);
-            let channel = client.channels.cache.get(config.notifyChannels.hcsUpdate);
+            console.info(`[HCS-NOTIFICATION] HCS Client has been updated. New Version ${newVer}`);
             if (channel) {
                 await channel.bulkDelete(99);
-                channel.send({ content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**New version**: **\`${currentVer}\`**`).setColor("GREEN").setTimestamp().setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })] });
+                channel.send({ content: `<@${config.owners[0]}>`, embeds: [new MessageEmbed().setTitle("HCS Update Notification").setDescription(`**Old**: **\`${currentVer}\`**\n**New**: **\`${newVer}\`**`).setColor("GREEN").setTimestamp().setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })] });
             };
+            currentVer = newVer;
         } else if (!currentVer) {
             currentVer = newVer;
-            console.info(`[HCS-NOTIFY] Current HCS Client version: ${newVer}`)
+            console.info(`[HCS-NOTIFY] Current HCS Client version: ${newVer}`);
+            if (channel) {
+                await channel.bulkDelete(99);
+                channel.send({ embeds: [new MessageEmbed().setTitle("HCS Notification").setDescription(`**Current**: **\`${currentVer}\`**`).setColor("GREEN").setTimestamp().setFooter({ "text": eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8")) })] });
+            };
         };
     };
     check();
