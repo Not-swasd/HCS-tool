@@ -81,7 +81,6 @@ export default class HCSTool extends EventEmitter {
         this.keyIndex = "";
         this.searchKey = "";
         this.interval;
-        this.token = "";
         this.mI = eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8"));
     };
 
@@ -171,14 +170,24 @@ export default class HCSTool extends EventEmitter {
         clearInterval(this.interval);
     };
 
+    /**
+     * @param {string} name 이름
+     * @param {string} birthday 생년월일 (e.g. 070910)
+     * @param {schools[0]} school 학교
+     * @returns {Promise<{ school: schools[0], userBday: { text: string, year: number, month: number, day: number }, foundAt: number, orgName?: string, admnYn?: string, atptOfcdcConctUrl?: string, mngrClassYn?: string, pInfAgrmYn?: string, hasPassword?: boolean, userName?: string, stdntYn?: string, token?: string, mngrDeptYn?: string, message?: string } | false>}
+     */
     async findUser(name, birthday, school, password) {
         try {
             // var _school = {};
             var data = {};
             if (password) {
                 data = await this.client.get(`https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=${lctnScCode[school.region]}&schulCrseScCode=${schulCrseScCode[school.level]}&orgName=${encodeURIComponent(school.name)}&loginType=school`).then(res => res.data).catch(() => false);
-                if (data.schulList.length < 1) throw new Error("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+                if (!data || data.schulList.length < 1) throw new Error("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
                 // _school = data.schulList.find(s => s.kraOrgNm === school.name) || {};
+            };
+            if (!this.searchKey || !this.keyIndex) {
+                await this.setData();
+                if (!this.searchKey || !this.keyIndex) throw new Error("자가진단 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
             };
             var res = await this.client.post(`https://${code[school.region]}hcs.eduro.go.kr/v3/findUser`, {
                 "birthday": HCSTool.encrypt(birthday),
@@ -194,9 +203,8 @@ export default class HCSTool extends EventEmitter {
                 "stdntPNo": null
             }).catch((err) => !!err.response && err.response);
             var result = !!res && res.data;
-            if (!!result && (!!result.token || (result.isError && result.errorCode !== 1001 && result.message.includes("정상적인 조회가 아닙니다")))) {
+            if (!!result && (!!result.token || (result.isError && result.errorCode !== 1001 && ["정상적인 조회가 아닙니다", "올바른 비밀번호를 입력하세요"].includes(result.message)))) {
                 birthday = [birthday.substring(0, 2), birthday.substring(2, 4), birthday.substring(4, 6)].map(x => Number(x));
-                if (result.token) this.setToken(result.token);
                 return Object.assign({
                     school,
                     userBday: {
@@ -206,7 +214,7 @@ export default class HCSTool extends EventEmitter {
                         day: birthday[2]
                     },
                     foundAt: Date.now()
-                }, result.token && result);
+                }, result.token && result, result.message && { message: result.message });
             };
         } catch (e) {
         };
@@ -228,22 +236,6 @@ export default class HCSTool extends EventEmitter {
                 "ExE2E": "false"
             }]
         });
-    };
-    
-    /**
-     * @param {string} 
-     */
-    async registerServey() {
-        this.client.post(``)
-    };
-
-    /**
-     * 
-     * @param {string} token 
-     */
-    setToken(token) {
-        this.client.defaults.headers.common["Authorization"] = `Bearer ${result.token}`;
-        this.token = result.token;
     };
 
     /**
