@@ -21,7 +21,7 @@
 > [Node.js](https://nodejs.org/ko/)와 [Discord](https://discord.com) 다운로드는 필수입니다.
 1. 모듈 설치
 ```
-npm install
+yarn
 ```
 1. config.json.example을 config.json으로 바꾼 뒤 따로 설정을 한다.<br>
 **파일에 설명을 위해 주석처리를 한 부분이 있습니다. 지워주세요 ('//'과 뒤에 있는 것)**

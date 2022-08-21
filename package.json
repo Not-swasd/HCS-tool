@@ -1,5 +1,5 @@
 {
-  "name": "school-finder",
+  "name": "hcs-tool",
   "version": "1.0.0",
   "description": "Find schools by name and birthday",
   "main": "index.js",
@@ -15,8 +15,6 @@
     "axios-retry": "^3.3.1",
     "discord-api-types": "^0.27.3",
     "discord.js": "^13.6.0",
-    "express": "^4.17.3",
-    "fs": "^0.0.1-security",
     "jsbn": "^1.1.0",
     "node-fetch": "^2.6.7",
     "request-promise": "^4.2.6"
