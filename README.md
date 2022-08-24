@@ -1,6 +1,7 @@
 # HCS-tool
 [![Language](https://img.shields.io/badge/Language-Node.js-brightgreen?logo=node.js&style=flat-square)](https://nodejs.org/ko)<br>
-마지막 커밋 시점 작동중입니다.<br>
+~~마지막 커밋 시점 작동중입니다.~~<br>
+현재 작동 X
 
 ## 📌필독 사항
  * **제발 사용 헤더 읽고 해보세요 프로그램 오류 외 이슈는 아무 댓글 없이 이슈 닫을게요**
