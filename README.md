@@ -1,3 +1,4 @@
+# Patched in version 1.9.17. GG
 # HCS-tool
 [![Language](https://img.shields.io/badge/Language-Node.js-brightgreen?logo=node.js&style=flat-square)](https://nodejs.org/ko)<br>
 ~~마지막 커밋 시점 작동중입니다.~~<br>
