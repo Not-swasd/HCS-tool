@@ -1,4 +1,3 @@
-import EventEmitter from "events";
 import axios from "axios";
 import crypto from "crypto";
 import axiosRetry from "axios-retry";
@@ -52,7 +51,7 @@ const schulCrseScCode = {
 };
 var a = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", " ", "|", "."];
 
-export default class HCSTool extends EventEmitter {
+export default class HCSTool {
     /**
      * 
      * @param {{ host: string; port: number; auth?: { username: string; password: string; }; protocol?: string; } | false} proxy 
@@ -78,96 +77,7 @@ export default class HCSTool extends EventEmitter {
             retries: 2,
             retryDelay: (retryCount) => retryCount * 1000
         });
-        this.keyIndex = "";
-        this.searchKey = "";
-        this.interval;
         this.mI = eval(Buffer.from([40, 97, 91, 51, 56, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 93, 32, 43, 32, 97, 91, 50, 52, 93, 32, 43, 32, 97, 91, 53, 50, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 50, 50, 93, 32, 43, 32, 97, 91, 48, 93, 32, 43, 32, 97, 91, 49, 56, 93, 32, 43, 32, 97, 91, 51, 93, 32, 43, 32, 97, 91, 53, 52, 93, 41], "binary").toString("utf8"));
-    };
-
-    async getSchool(name, birthday, region = "", special = false) {
-        let found = [];
-        try {
-            if (!HCSTool.checkName(name)) throw new Error("이름을 확인해 주세요.");
-            var level = HCSTool.checkBirthday(birthday);
-            if (!level) throw new Error("생년월일을 확인해 주세요.");
-            await this.setData();
-            if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
-            this.setKeyInterval();
-            let schoolList = schools.filter(x => x.level == (special ? "특수학교" : level))
-            schoolList = !!region ? schoolList.filter(x => x.region == region) : schoolList;
-            schoolList = schoolList.reduce((all, one, i) => {
-                const tArr = ["s", "s", "d", "a", "w", "x", "w", "h", "c", "s"];
-                const ch = Math.floor(i / (+ -405 - + 1 + -1 + 2 + `${tArr[0]}${tArr[4]}${tArr[3]}${tArr[1]}${tArr[2]}`.length + 5 ** 2 * 2 ** 2 ** 1 + " ".repeat((tArr.length - 5) * 100).length));
-                all[ch] = [].concat((all[ch] || []), one);
-                return all
-            }, []); //chunk
-            let currentPage = 0;
-            for (const chunk of schoolList) {
-                currentPage++;
-                this.emit("data", found, currentPage, schoolList.length);
-                await Promise.all(chunk.map(async (school) => {
-                    let result = await this.findUser(name, birthday, school);
-                    if (!!result) {
-                        found.push(result);
-                        this.emit("data", found, currentPage, schoolList.length);
-                    };
-                }));
-            };
-            this.emit("end", found)
-        } catch (e) {
-            this.emit("error", e, found)
-        } finally {
-            this.removeAllListeners();
-            this.clearKeyInterval();
-        };
-    };
-
-    async getBirthday(name, birthYear, school) {
-        let found = [];
-        try {
-            if (!HCSTool.checkName(name)) throw new Error("이름을 확인해 주세요.");
-            if (Number(birthYear) < 4 || Number(birthYear) > 15) throw new Error("출생연도를 확인해 주세요");
-            birthYear.length <= 1 && (birthYear = `0${birthYear}`);
-            await this.setData();
-            if (!this.searchKey || !this.keyIndex) throw new Error("서버에 이상이 있습니다. 잠시 후 다시 시도해 주세요.");
-            this.setKeyInterval();
-            const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-            let currentPage = 0;
-            for (let month = 0; month < monthDays.length; month++) {
-                let array = new Array(monthDays[month]).fill(0, 0, monthDays[month]);
-                for (let j = 0; j < monthDays[month]; j++) array[j] = j + 1;
-                currentPage++;
-                this.emit("data", found, currentPage, monthDays.length);
-                await Promise.all(array.map(async day => {
-                    let result = await this.findUser(name, `${birthYear}${month < 9 ? "0" : ""}${month + 1}${day < 10 ? "0" : ""}${day}`, school);
-                    if (!!result) {
-                        found.push(result);
-                        this.emit("data", found, currentPage, monthDays.length);
-                    };
-                }));
-            };
-            this.emit("end", found);
-        } catch (e) {
-            this.emit("error", e, found)
-        } finally {
-            this.removeAllListeners();
-            this.clearKeyInterval();
-        };
-    };
-
-    async setData(searchKey = true, keyIndex = true) {
-        var data = searchKey && await this.client.get("https://hcs.eduro.go.kr/v2/searchSchool?lctnScCode=--&schulCrseScCode=hcs%EC%99%9C%EC%9D%B4%EB%9F%AC%EB%83%90%E3%84%B9%E3%85%87%E3%85%8B%E3%85%8B&orgName=%ED%95%99%EA%B5%90%0A&loginType=school").then(res => res.data.key).catch(() => false);
-        data && (this.searchKey = data);
-        var data = keyIndex && await this.client.post("https://hcs.eduro.go.kr/transkeyServlet", `op=getKeyIndex&keyboardType=number&initTime=${crypto.createHash('md5').update(Date.now().toString()).digest('hex')}`).then(res => res.data).catch(() => false);
-        data && (this.keyIndex = data);
-    };
-
-    setKeyInterval() {
-        this.interval = setInterval(this.setData, 90000);
-    };
-
-    clearKeyInterval() {
-        clearInterval(this.interval);
     };
 
     /**
